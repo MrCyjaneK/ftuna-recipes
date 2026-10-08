@@ -1,0 +1,24 @@
+name: Advanced Camera
+commit: cdcef3fb69267178f3f224b12f5f6b862a205f6e
+ai: H
+description: |
+  Advanced Camera is a community camera application for Sailfish devices. It queries and sets the parameters supported by the device.
+
+  Full control over:
+
+  - Effects
+  - Exposure and scene modes
+  - Focus mode
+  - Resolution
+  - White balance
+  - Flash mode
+  - ISO
+
+  Selected parameters are shown on the buttons where possible. Tapping the screen sets the focus circle in Auto, Macro, and Continuous modes. Holding the shutter focuses and takes an image in those modes. Other modes take an instant image.
+
+  Exposure mode typically provides an HDR mode for taking HDR images.
+icon: https://raw.githubusercontent.com/piggz/harbour-advanced-camera/cdcef3fb69267178f3f224b12f5f6b862a205f6e/harbour-advanced-camera.svg
+screenshots:
+  - https://raw.githubusercontent.com/piggz/harbour-advanced-camera/cdcef3fb69267178f3f224b12f5f6b862a205f6e/screenshots/screenshot1.png
+install:
+  - harbour-advanced-camera

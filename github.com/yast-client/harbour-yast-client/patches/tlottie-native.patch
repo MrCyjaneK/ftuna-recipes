@@ -1,0 +1,50 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 742ea02..9075faf 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -83,20 +83,26 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
+ 
+ # Credit to https://github.com/whisperfish/whisperfish/blob/main/rpm/harbour-whisperfish.spec
+ 
+-if (TARGET_ARCHITECTURE STREQUAL aarch64)
+-    set(TLOTTIE_RUST_ENV "SB2_RUST_TARGET_TRIPLE=aarch64-unknown-linux-gnu" "RUSTC_BOOTSTRAP=1")
+-    set(TLOTTIE_BUILD_SUBDIR "aarch64-unknown-linux-gnu")
+-    set(TLOTTIE_RUSTFLAGS="-C target-feature=+neon")
+-elseif (TARGET_ARCHITECTURE STREQUAL armv7hl)
+-    set(TLOTTIE_RUST_ENV "SB2_RUST_TARGET_TRIPLE=armv7-unknown-linux-gnueabihf")
+-    set(TLOTTIE_BUILD_SUBDIR "armv7-unknown-linux-gnueabihf")
+-    set(TLOTTIE_RUSTFLAGS="-C target-feature=+neon")
+-elseif (TARGET_ARCHITECTURE STREQUAL i486)
+-    set(TLOTTIE_RUST_ENV "SB2_RUST_TARGET_TRIPLE=i686-unknown-linux-gnu")
+-    set(TLOTTIE_BUILD_SUBDIR "i686-unknown-linux-gnu")
++set(TLOTTIE_RUSTFLAGS "")
++if (NOT TARGET_ARCHITECTURE STREQUAL i486)
++    set(TLOTTIE_RUSTFLAGS "-C target-feature=+neon")
+ endif()
+ add_subdirectory(lottieqt)
+ 
++set(TLOTTIE_LIB ${CMAKE_CURRENT_BINARY_DIR}/lottieqt/tlottie_target/release-nostd/libtlottie.a)
++add_custom_command(
++    OUTPUT ${TLOTTIE_LIB}
++    COMMAND ${CMAKE_COMMAND} -E env
++        RUSTC_BOOTSTRAP=1
++        "PATH=/opt/yast/rust/bin:$ENV{PATH}"
++        "CARGO_HOME=/opt/yast/cargo"
++        "RUSTFLAGS=-C relocation-model=pic ${TLOTTIE_RUSTFLAGS}"
++        "CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/lottieqt/tlottie_target"
++        /opt/yast/rust/bin/cargo rustc --offline --locked --profile release-nostd --features c-api --lib --crate-type staticlib
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lottieqt/tlottie
++)
++add_custom_target(tlottie_build DEPENDS ${TLOTTIE_LIB})
++
+ add_executable(${CMAKE_PROJECT_NAME} src/${CMAKE_PROJECT_NAME}.cpp)
+ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+     $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
+@@ -120,6 +126,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
+     yaqtlib
+     LottieQt
+ )
++add_dependencies(${CMAKE_PROJECT_NAME} tlottie_build)
+ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+     src/${CMAKE_PROJECT_NAME}.cpp
+     src/voicenoterecorder.cpp

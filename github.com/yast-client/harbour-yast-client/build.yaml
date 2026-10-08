@@ -1,0 +1,24 @@
+name: YAST Client
+commit: 1b48e2414e8fcceb8e57250ebf0850cedd22114e
+ai: H
+description: |
+  YAST Client is a yet another SailfishOS Telegram client. Its goal isn't to be the future of SailfishOS Telegram clients, neither is to have the most features possible. The main point of it is to simple be a good client for using it daily on your phone today.
+
+  YAST doesn't try to reinvent the wheel; it is based on Fernschreiber and continues its development, adding even more features to it, enhancing it even further and making it more complete, as well as seamless and natural to use.
+
+  For more updates on YAST, subscribe to the official Telegram channel. This, among other useful SailfishOS-related Telegram resources, such as the Fan Club group, can be opened at any time from the app's About page. See also YAST Client introduction on YouTube or directly in Telegram.
+
+  YAST sources are hosted on GitHub and Codeberg.
+
+  No AIs (LLMs) were used for creating this project.
+
+  Why fork Fernschreiber?
+  When the development of this project started more than a year ago, Fernschreiber hasn't received any updates for a long time. I first considered sending pull requests to the original project, but after seeing many of them still waiting for a review when more than a year after the submission has passed, forking the project seemed like the best choice. Despite Fernschreiber receiving a (relatively small) update recently, it still lags behing YAST, which is why I decided to finally publish it in the store.
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/18816/icon-harbour-yast-client.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/18816/screenshot-1.png
+  - https://openrepos.net/sites/default/files/packages/18816/screenshot-2.png
+  - https://openrepos.net/sites/default/files/packages/18816/screenshot-3.png
+install:
+  -  harbour-yast-client

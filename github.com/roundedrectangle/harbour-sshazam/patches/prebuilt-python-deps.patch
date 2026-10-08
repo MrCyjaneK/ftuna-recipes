@@ -1,0 +1,39 @@
+diff --git a/rpm/harbour-sshazam.spec b/rpm/harbour-sshazam.spec
+index 325b795..45f0a01 100644
+--- a/rpm/harbour-sshazam.spec
++++ b/rpm/harbour-sshazam.spec
+@@ -1,5 +1,5 @@
+ %define package_library "yes"
+-%define use_rust "no"
++%define use_rust "yes"
+ # See README
+ 
+ Name:       harbour-sshazam
+@@ -57,18 +57,15 @@ Uses Shazam's API to recognize music
+ 
+ %if %{package_library} == "yes"
+ 
+-%if %{use_rust} == "yes"
+-python3 -m pip install shazamio --target=%_builddir/deps
+-%else
+-python3 -m pip install git+https://github.com/roundedrectangle/ShazamIO --target=%_builddir/deps
+-%endif
+-
+-python3 -m pip install pasimple --target=%_builddir/deps
+-rm -rf %_builddir/deps/bin
+-strip -s %_builddir/deps/propcache/*.so || true
+-strip -s %_builddir/deps/numpy.libs/*.so || true
+-strip -s %_builddir/deps/numpy/random/*.so || true
+-chmod -x %_builddir/deps/numpy/testing/*.py || true
++# Python deps are built into the SDK image. rpmbuild has no network.
++# The install section copies ./deps from this directory.
++cp -a /opt/sshazam/deps deps
++rm -rf deps/bin
++strip -s deps/shazamio_core/*.so || true
++strip -s deps/propcache/*.so || true
++strip -s deps/numpy.libs/*.so || true
++strip -s deps/numpy/random/*.so || true
++chmod -x deps/numpy/testing/*.py || true
+ 
+ %endif
+ 

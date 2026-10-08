@@ -1,0 +1,15 @@
+diff --git a/yaqtlib/rnnoise_download_model.sh b/yaqtlib/rnnoise_download_model.sh
+index fc0963e..995cff6 100644
+--- a/yaqtlib/rnnoise_download_model.sh
++++ b/yaqtlib/rnnoise_download_model.sh
+@@ -1,8 +1,3 @@
+ #!/bin/sh
+-
+-wget() {
+-    curl -OL "$@"
+-}
+-
+-. download_model.sh
+-exit $?
++set -eu
++cp -a /opt/yast/rnnoise-model/. .

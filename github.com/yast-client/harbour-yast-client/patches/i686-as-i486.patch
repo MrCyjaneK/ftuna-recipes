@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 742ea02..b842468 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,7 +19,7 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
+     set(TARGET_ARCHITECTURE aarch64)
+ elseif (CMAKE_SYSTEM_PROCESSOR MATCHES ^armv7)
+     set(TARGET_ARCHITECTURE armv7hl)
+-elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL i486)
++elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL i486 OR CMAKE_SYSTEM_PROCESSOR STREQUAL i686)
+     set(TARGET_ARCHITECTURE i486)
+ else()
+     message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
