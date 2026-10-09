@@ -1,0 +1,22 @@
+name: Orange Flex Unofficial
+commit: 1023ab50a085e6307f818971276818dd176eecb2
+ai: C
+path: ./apps/sfos
+description: |
+  Unofficial client for Orange Flex.
+
+  - See your account balance
+  - Withdraw stashed GiB
+  - Topup with BLIK code
+  - Multiple read only values
+
+  source: https://github.com/MrCyjaneK/sfos_orangeflex
+
+  no screenshot because there's a lot of my own data there
+
+  also, login procedure requires: 1. SMS code 2. Email code 3. SMS code (again). Don't ask me why. It's doing that on android too.
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/13571/icon-harbour-orangeflex.png
+screenshots:
+install:
+  - harbour-orangeflex

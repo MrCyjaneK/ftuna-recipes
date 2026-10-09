@@ -1,0 +1,19 @@
+name: Exawake
+commit: 19d965f1e5be69bbf6aba93710185ab8e374bdff
+ai: H
+description: |
+  Exawake is simple Wake-On-Lan application.
+
+  Github: https://github.com/Michal-Szczepaniak/Exawake
+
+  Paypal: https://www.paypal.me/MisterMagister
+
+  Patreon: https://www.patreon.com/Mister_Magister
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/17220/icon-exawake.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/17220/screenshot-photo2020-11-1318-15-38.jpg
+  - https://openrepos.net/sites/default/files/packages/17220/screenshot-photo2020-11-1318-15-42.jpg
+  - https://openrepos.net/sites/default/files/packages/17220/screenshot-photo2020-11-1318-15-55.jpg
+install:
+  - exawake

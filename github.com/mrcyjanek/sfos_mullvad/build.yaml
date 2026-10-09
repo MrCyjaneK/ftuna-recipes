@@ -1,0 +1,26 @@
+name: Mullvad VPN
+commit: 1f3606cf17ff91ea73e734104d7f4ddc23579a42
+ai: C
+description: |
+  Native client for Mullvad VPN wireguard
+
+  - custom locations
+  - device management
+  - native VPN integration
+  - quick IP check
+  - Monero, Bitcoin, Bitcoin Cash topup
+
+  New account creation is unsupported, go to https://mullvad.net/en/account/create to create new account
+
+  https://github.com/MrCyjaneK/sfos_mullvad
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/18578/icon-harbour-mullvad.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925194140001.png
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925194217001.png
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925194225001.png
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925194232001.png
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925194238001.png
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925194249001.png
+install:
+  - harbour-mullvad

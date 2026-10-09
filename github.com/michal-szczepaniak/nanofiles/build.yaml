@@ -1,0 +1,23 @@
+name: Nanofiles
+commit: f50103bb6bd016daadb403a8a062981c416c3fc0
+ai: H
+description: |
+  Nanofiles is file manager app.
+
+  Features:
+
+  - Grid / List View 
+  - Inbuilt root mode
+  - Swipe left to go back
+  - Compressing files
+  - Places page
+  - Adding / Managing entries in Places page
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/15632/icon-nanofiles.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/15632/screenshot-screenshot20200411001.png
+  - https://openrepos.net/sites/default/files/packages/15632/screenshot-screenshot20200411003.png
+  - https://openrepos.net/sites/default/files/packages/15632/screenshot-screenshot20200411004.png
+  - https://openrepos.net/sites/default/files/packages/15632/screenshot-screenshot20200411005.png
+install:
+  - nanofiles

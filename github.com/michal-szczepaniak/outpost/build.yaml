@@ -1,0 +1,13 @@
+name: Outpost
+commit: 551f9bdc0d182d44d5c124e4ae8a58d333b303e4
+ai: H
+description: |
+  Outpost is unofficial app for InPost.
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/14239/icon-icon-launcher-outpost.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/14239/screenshot-screenshot20231006004.png
+  - https://openrepos.net/sites/default/files/packages/14239/screenshot-screenshot20231006005.png
+  - https://openrepos.net/sites/default/files/packages/14239/screenshot-screenshot20231006006.png
+install:
+  - outpost

@@ -1,0 +1,14 @@
+name: SSH Notif
+commit: 4b19fc4a108043f81c9d5619dbf4e2ed24007aed
+ai: C
+description: |
+  Send notification when SSH session starts/ends
+
+  https://github.com/MrCyjaneK/sshnotif.
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/18578/icon-sshnotif.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925213749001.png
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-screenshot20260925213812001.png
+install:
+  - sshnotif

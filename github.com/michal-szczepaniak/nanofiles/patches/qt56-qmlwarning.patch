@@ -1,0 +1,42 @@
+diff --git a/vendor/fr/grecko/sortfilterproxymodel/filters/filtercontainer.cpp b/vendor/fr/grecko/sortfilterproxymodel/filters/filtercontainer.cpp
+--- a/vendor/fr/grecko/sortfilterproxymodel/filters/filtercontainer.cpp
++++ b/vendor/fr/grecko/sortfilterproxymodel/filters/filtercontainer.cpp
+@@ -78,7 +78,7 @@ FilterContainerAttached::FilterContainerAttached(QObject* object) : QObject(obje
+     m_filter(qobject_cast<Filter*>(object))
+ {
+     if (!m_filter)
+-        qmlWarning(object) << "FilterContainer must be attached to a Filter";
++        qWarning() << object << "FilterContainer must be attached to a Filter";
+ }
+ 
+ FilterContainerAttached::~FilterContainerAttached()
+@@ -106,7 +106,7 @@ void FilterContainerAttached::setContainer(QObject* object)
+ 
+     FilterContainer* container = qobject_cast<FilterContainer*>(object);
+     if (object && !container)
+-        qmlWarning(parent()) << "container must inherits from FilterContainer, " << object->metaObject()->className() << " provided";
++        qWarning() << parent() << "container must inherits from FilterContainer, " << object->metaObject()->className() << " provided";
+ 
+     if (m_container && m_filter)
+         qobject_cast<FilterContainer*>(m_container.data())->removeFilter(m_filter);
+diff --git a/vendor/fr/grecko/sortfilterproxymodel/sorters/sortercontainer.cpp b/vendor/fr/grecko/sortfilterproxymodel/sorters/sortercontainer.cpp
+--- a/vendor/fr/grecko/sortfilterproxymodel/sorters/sortercontainer.cpp
++++ b/vendor/fr/grecko/sortfilterproxymodel/sorters/sortercontainer.cpp
+@@ -78,7 +78,7 @@ SorterContainerAttached::SorterContainerAttached(QObject* object) : QObject(obje
+     m_sorter(qobject_cast<Sorter*>(object))
+ {
+     if (!m_sorter)
+-        qmlWarning(object) << "SorterContainerAttached must be attached to a Sorter";
++        qWarning() << object << "SorterContainerAttached must be attached to a Sorter";
+ }
+ 
+ SorterContainerAttached::~SorterContainerAttached()
+@@ -106,7 +106,7 @@ void SorterContainerAttached::setContainer(QObject* object)
+ 
+     SorterContainer* container = qobject_cast<SorterContainer*>(object);
+     if (object && !container)
+-        qmlWarning(parent()) << "container must inherits from SorterContainer, " << object->metaObject()->className() << " provided";
++        qWarning() << parent() << "container must inherits from SorterContainer, " << object->metaObject()->className() << " provided";
+ 
+     if (m_container && m_sorter)
+         qobject_cast<SorterContainer*>(m_container.data())->removeSorter(m_sorter);
