@@ -5,6 +5,7 @@ name: Advanced Camera
 commit: cdcef3fb69267178f3f224b12f5f6b862a205f6e
 ai: H
 path: .
+arches: all
 description: |
   Advanced Camera is a community camera application for Sailfish devices.
 
@@ -21,6 +22,7 @@ install:
 - `commit` - What commit should we pull for build - this also pulls all submodules
 - `ai` - [AI usage level](#ai-usage) - following Chum guidelines
 - `path` - where 'rpm' directory is located
+- `arches` - Which architectures to build: `aarch64`, `armv7hl`, `i486`, or a comma-separated list of those. `all`, empty, or omitted builds all three.
 - `description` - Description that appears in the UI
 - `screenshots` - Screanshots that appear in the UI
 - `install` - which packages should be installed by default, since one source can build multiple .rpms
