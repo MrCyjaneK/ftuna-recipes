@@ -1,0 +1,176 @@
+name: Scratchpad
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/build.yaml"
+      - "**/overlay/**"
+      - "**/patches/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: scratchpad-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - id: recipes
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          declare -A seen=()
+          while IFS= read -r f; do
+            [[ -n "$f" ]] || continue
+            dir=$(dirname "$f")
+            while true; do
+              if [[ -f "$dir/build.yaml" ]]; then
+                seen["$dir"]=1
+                break
+              fi
+              if [[ "$dir" != */* ]]; then
+                break
+              fi
+              dir=${dir%/*}
+            done
+          done < <(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --jq '.[] | .filename')
+
+          if [[ ${#seen[@]} -eq 0 ]]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s\n' "${!seen[@]}" | sort > "$RUNNER_TEMP/changed-recipes.txt"
+          echo "count=${#seen[@]}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-go@v5
+        if: steps.recipes.outputs.count != '0'
+        with:
+          go-version: stable
+
+      - name: Install sfosbuild and ftuna
+        if: steps.recipes.outputs.count != '0'
+        run: |
+          go install github.com/mrcyjanek/sfosbuild@latest
+          go install github.com/mrcyjanek/ftuna/cmd/ftuna@latest
+
+      - uses: actions/cache@v4
+        if: steps.recipes.outputs.count != '0'
+        with:
+          path: ~/.config/ftuna/scratch-token
+          key: ftuna-scratch-token-${{ github.event.pull_request.number }}
+
+      - name: Register scratch account
+        if: steps.recipes.outputs.count != '0'
+        run: ftuna scratch register
+
+      - name: Build and comment
+        if: steps.recipes.outputs.count != '0'
+        env:
+          FTUNA_RECIPES: ${{ github.workspace }}
+          PR_USER: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          sanitize() {
+            printf '%s' "$1" \
+              | tr '[:upper:]' '[:lower:]' \
+              | sed -e 's/[^a-z0-9_-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//'
+          }
+
+          mapfile -t recipes < "$RUNNER_TEMP/changed-recipes.txt"
+          user=$(sanitize "$PR_USER")
+          if [[ -z "$user" ]]; then
+            user=pr
+          fi
+          prefix="${user}-${PR_NUMBER}-"
+          multi=0
+          if [[ ${#recipes[@]} -gt 1 ]]; then
+            multi=1
+          fi
+
+          lines=()
+          fail=0
+          i=0
+          for recipe in "${recipes[@]}"; do
+            if [[ "$multi" -eq 1 ]]; then
+              suffix=$i
+            else
+              suffix=$(sanitize "$(basename "$recipe")")
+              if [[ -z "$suffix" ]]; then
+                suffix=0
+              fi
+            fi
+            max_suffix=$((80 - ${#prefix}))
+            if [[ "$max_suffix" -lt 1 ]]; then
+              echo "scratch name prefix is longer than 80 characters: $prefix" >&2
+              exit 1
+            fi
+            suffix=${suffix:0:max_suffix}
+            name="${prefix}${suffix}"
+
+            python3 - "$recipe/build.yaml" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          lines = path.read_text().splitlines(keepends=True)
+          out = [line for line in lines if not line.startswith("arches:")]
+          if out and not out[-1].endswith("\n"):
+              out[-1] += "\n"
+          out.append("arches: aarch64\n")
+          path.write_text("".join(out))
+          PY
+
+            echo "::group::ftuna 5.1.0.11 ${recipe} ${name}"
+            set +e
+            log=$(ftuna 5.1.0.11 "$recipe" "$name" 2>&1)
+            status=$?
+            set -e
+            printf '%s\n' "$log"
+            echo "::endgroup::"
+
+            if [[ "$status" -ne 0 ]]; then
+              lines+=("${recipe} build failed")
+              fail=1
+            else
+              url=$(printf '%s\n' "$log" | grep -oE 'https://scratchpad-repo\.ftuna\.eu/[0-9a-f]+/[^[:space:]]+' | tail -n 1 || true)
+              if [[ -z "$url" ]]; then
+                lines+=("${recipe} built but printed no scratch URL")
+                fail=1
+              else
+                lines+=("${recipe} ${url}")
+              fi
+            fi
+            i=$((i + 1))
+          done
+
+          {
+            echo '<!-- ftuna-scratch -->'
+            printf '%s\n' "${lines[@]}"
+          } > "$RUNNER_TEMP/scratch-comment.md"
+
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | contains("<!-- ftuna-scratch -->")) | .id' \
+            > "$RUNNER_TEMP/comment-ids.txt"
+          comment_id=$(head -n 1 "$RUNNER_TEMP/comment-ids.txt")
+          jq -n --rawfile body "$RUNNER_TEMP/scratch-comment.md" '{body:$body}' > "$RUNNER_TEMP/scratch-comment.json"
+          if [[ -n "$comment_id" ]]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" \
+              --input "$RUNNER_TEMP/scratch-comment.json" > /dev/null
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --input "$RUNNER_TEMP/scratch-comment.json" > /dev/null
+          fi
+
+          exit "$fail"
