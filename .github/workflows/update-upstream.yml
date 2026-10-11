@@ -1,0 +1,33 @@
+name: Update upstream
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: "Limit to one github.com recipe, as owner/repo or github.com/owner/repo"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-upstream
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open one pull request per updated repository
+        env:
+          RECIPE: ${{ github.event_name == 'workflow_dispatch' && inputs.recipe || '' }}
+          BASE_BRANCH: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/update-upstream.py
