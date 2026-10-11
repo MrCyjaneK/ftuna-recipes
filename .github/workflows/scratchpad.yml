@@ -7,28 +7,49 @@ on:
       - "**/build.yaml"
       - "**/overlay/**"
       - "**/patches/**"
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Pull request number
+        required: true
+        type: string
 
 permissions:
   contents: read
   pull-requests: write
 
 concurrency:
-  group: scratchpad-${{ github.event.pull_request.number }}
+  group: scratchpad-${{ github.event_name == 'workflow_dispatch' && inputs.pull_request || github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
     steps:
+      - id: pr
+        env:
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pull_request || github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "pull request number is required" >&2
+            exit 1
+          fi
+          echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" \
+            --jq '"repo=\(.head.repo.full_name)\nsha=\(.head.sha)\nuser=\(.user.login)"' \
+            >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ steps.pr.outputs.repo }}
+          ref: ${{ steps.pr.outputs.sha }}
           persist-credentials: false
 
       - id: recipes
         env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
           set -euo pipefail
           declare -A seen=()
@@ -69,7 +90,7 @@ jobs:
         if: steps.recipes.outputs.count != '0'
         with:
           path: ~/.config/ftuna/scratch-token
-          key: ftuna-scratch-token-${{ github.event.pull_request.number }}
+          key: ftuna-scratch-token-${{ steps.pr.outputs.number }}
 
       - name: Register scratch account
         if: steps.recipes.outputs.count != '0'
@@ -79,8 +100,8 @@ jobs:
         if: steps.recipes.outputs.count != '0'
         env:
           FTUNA_RECIPES: ${{ github.workspace }}
-          PR_USER: ${{ github.event.pull_request.user.login }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_USER: ${{ steps.pr.outputs.user }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
           set -euo pipefail
 
