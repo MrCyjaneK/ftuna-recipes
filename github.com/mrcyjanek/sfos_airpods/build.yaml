@@ -1,0 +1,14 @@
+name: AirPods
+commit: abc076347259c9315084187ddff571e9808a77c0
+ai: V
+description: |
+  Manage your airpods on your sfos device
+
+  https://github.com/MrCyjaneK/sfos_airpods
+
+icon: https://openrepos.net/sites/default/files/styles/thumbnail/public/packages/18578/icon-sfosairpods.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/18578/screenshot-2026-10-11103942.jpg
+install:
+  - sfos_airpods
+  - sfos_airpods-daemon
