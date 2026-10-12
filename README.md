@@ -26,6 +26,9 @@ install:
 - `description` - Description that appears in the UI
 - `screenshots` - Screanshots that appear in the UI
 - `install` - which packages should be installed by default, since one source can build multiple .rpms
+- `repos` - extra https repositories installed into the build image. `{version}` is the Sailfish OS version (`5.1.0.11`), `{release}` is major.minor (`5.1`), and `{arch}` is `aarch64`, `armv7hl`, or `i486`. `{version}/{arch}` keeps the full version (`https://repo-oss.ftuna.eu/{version}/{arch}/`). `{version}_{arch}` follows Chum and uses major.minor from 4.6 (`https://repo.sailfishos.org/obs/sailfishos:/chum/{version}_{arch}/` becomes `5.1_aarch64`).
+
+One upstream repository can contain several packages. `build.yaml` is that repository. Another file in the same directory, such as `libfoo.yaml`, is a second package from the same clone. It has its own `path`, `install`, and `repos`. `overlay/` and `patches/` are shared. The recipe id of `libfoo.yaml` is `github.com/owner/repo/libfoo`.
 
 ## AI usage
 

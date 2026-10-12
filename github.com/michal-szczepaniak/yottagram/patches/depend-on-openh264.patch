@@ -1,0 +1,36 @@
+diff --git a/rpm/yottagram.spec b/rpm/yottagram.spec
+--- a/rpm/yottagram.spec
++++ b/rpm/yottagram.spec
+@@ -16,6 +16,7 @@ Patch0:     disable-x11-and-desktop-capture.patch
+ Patch1:     force-mono-mic.patch
+ Requires:   sailfishsilica-qt5 >= 0.10.9
+ Requires:   qt5-qtquickcontrols-layouts
++Requires:   libopenh264-7
+ BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2
+ BuildRequires:  pkgconfig(Qt5Core)
+ BuildRequires:  pkgconfig(Qt5Qml)
+@@ -89,16 +90,6 @@ export APP_VERSION=%{version}
+ rm -rf %{buildroot}
+ %qmake5_install
+ 
+-if [ -f /usr/lib64/libopenh264.so ]; then
+-    cp /usr/lib64/libopenh264.so.2.3.1 %{buildroot}%{_libdir}
+-    cp /usr/lib64/libopenh264.so.7 %{buildroot}%{_libdir}
+-    cp /usr/lib64/libopenh264.so %{buildroot}%{_libdir}
+-else
+-    cp /usr/lib/libopenh264.so.2.3.1 %{buildroot}%{_libdir}
+-    cp /usr/lib/libopenh264.so.7 %{buildroot}%{_libdir}
+-    cp /usr/lib/libopenh264.so %{buildroot}%{_libdir}
+-fi
+-
+ desktop-file-install --delete-original       \
+   --dir %{buildroot}%{_datadir}/applications             \
+    %{buildroot}%{_datadir}/applications/*.desktop
+@@ -112,7 +103,6 @@ desktop-file-install --delete-original       \
+ %{_datadir}/lipstick/notificationcategories/x-verdanditeam.yottagram.im.conf
+ %{_datadir}/applications/%{name}.desktop
+ %{_datadir}/icons/hicolor/*/apps/%{name}.png
+-%{_libdir}/libopenh264.so*
+ 
+ %files voicecall-plugin
+ %{_libdir}/voicecall/plugins/libyottagram-voicecall-plugin.so

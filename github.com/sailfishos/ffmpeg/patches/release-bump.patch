@@ -1,0 +1,11 @@
+diff --git a/rpm/ffmpeg.spec b/rpm/ffmpeg.spec
+--- a/rpm/ffmpeg.spec
++++ b/rpm/ffmpeg.spec
+@@ -1,6 +1,6 @@
+ Name:           ffmpeg
+ Version:        8.1.2
+-Release:        1
++Release:        20261112.morecodecs
+ Summary:        FFmpeg video encoding and decoding library
+ Url:            https://github.com/sailfishos/ffmpeg
+ Source:         %{name}-%{version}.tar.bz2

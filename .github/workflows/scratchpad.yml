@@ -4,7 +4,7 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened]
     paths:
-      - "**/build.yaml"
+      - "**/*.yaml"
       - "**/overlay/**"
       - "**/patches/**"
   workflow_dispatch:
@@ -53,30 +53,82 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
           set -euo pipefail
-          declare -A seen=()
-          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --jq '.[] | .filename' > "$RUNNER_TEMP/pr-files.txt"
-          while IFS= read -r f; do
-            [[ -n "$f" ]] || continue
-            dir=$(dirname "$f")
+          declare -A yaml_of=()
+
+          under_extra() {
+            case "/$1/" in
+              */overlay/*|*/patches/*|*/.github/*) return 0 ;;
+            esac
+            return 1
+          }
+
+          recipe_id() {
+            local file=$1
+            local dir base
+            dir=$(dirname "$file")
+            base=$(basename "$file")
+            if [[ "$base" == "build.yaml" ]]; then
+              printf '%s\n' "$dir"
+            else
+              printf '%s/%s\n' "$dir" "${base%.yaml}"
+            fi
+          }
+
+          add_file() {
+            local file=$1
+            [[ "$file" == *.yaml ]] || return 0
+            if under_extra "$file"; then
+              return 0
+            fi
+            yaml_of["$(recipe_id "$file")"]=$file
+          }
+
+          add_dir() {
+            local dir=$1
+            local file
+            for file in "$dir"/*.yaml; do
+              [[ -f "$file" ]] || continue
+              add_file "$file"
+            done
+          }
+
+          recipe_dir() {
+            local dir=$1
             while true; do
-              if [[ -f "$dir/build.yaml" ]]; then
-                seen["$dir"]=1
-                break
+              if ! under_extra "$dir" && compgen -G "$dir"/*.yaml > /dev/null; then
+                printf '%s\n' "$dir"
+                return 0
               fi
               if [[ "$dir" != */* ]]; then
-                break
+                return 1
               fi
               dir=${dir%/*}
             done
+          }
+
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --jq '.[] | .filename' > "$RUNNER_TEMP/pr-files.txt"
+          while IFS= read -r f; do
+            [[ -n "$f" ]] || continue
+            if [[ "$f" == *.yaml ]] && ! under_extra "$f"; then
+              add_file "$f"
+              continue
+            fi
+            dir=$(recipe_dir "$(dirname "$f")" || true)
+            if [[ -n "$dir" ]]; then
+              add_dir "$dir"
+            fi
           done < "$RUNNER_TEMP/pr-files.txt"
 
-          if [[ ${#seen[@]} -eq 0 ]]; then
-            echo "no build.yaml, overlay, or patch changes"
+          if [[ ${#yaml_of[@]} -eq 0 ]]; then
+            echo "no recipe yaml, overlay, or patch changes"
             echo "count=0" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          printf '%s\n' "${!seen[@]}" | sort > "$RUNNER_TEMP/changed-recipes.txt"
-          echo "count=${#seen[@]}" >> "$GITHUB_OUTPUT"
+          : > "$RUNNER_TEMP/changed-recipes.txt"
+          while IFS= read -r id; do
+            printf '%s\t%s\n' "$id" "${yaml_of[$id]}" >> "$RUNNER_TEMP/changed-recipes.txt"
+          done < <(printf '%s\n' "${!yaml_of[@]}" | sort)
+          echo "count=${#yaml_of[@]}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-go@v5
         if: steps.recipes.outputs.count != '0'
@@ -128,7 +180,9 @@ jobs:
           lines=()
           fail=0
           i=0
-          for recipe in "${recipes[@]}"; do
+          for line in "${recipes[@]}"; do
+            recipe=${line%%$'\t'*}
+            yaml=${line#*$'\t'}
             if [[ "$multi" -eq 1 ]]; then
               suffix=$i
             else
@@ -145,7 +199,7 @@ jobs:
             suffix=${suffix:0:max_suffix}
             name="${prefix}${suffix}"
 
-            python3 - "$recipe/build.yaml" <<'PY'
+            python3 - "$yaml" <<'PY'
           import pathlib, sys
           path = pathlib.Path(sys.argv[1])
           lines = path.read_text().splitlines(keepends=True)

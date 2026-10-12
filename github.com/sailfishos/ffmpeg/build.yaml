@@ -1,0 +1,22 @@
+name: ffmpeg
+commit: 475ba482c7c77f9be4092ffdadbd1fcf2f4ee74f
+ai: H
+description: |
+  
+  Jolla's FFmpeg with extra codecs
+
+  dca # DTS core + extension (DTS-HD) audio
+  hevc # H.265/HEVC video
+  vc1 # VC-1 video
+  eac3 # Dolby Digital Plus audio
+  mlp # Meridian Lossless Packing (TrueHD's base layer)
+  truehd # Dolby TrueHD audio
+  dvdsub # DVD (VOB) bitmap subtitles
+  xsub # DivX/XSUB bitmap subtitles
+  movtext # MP4 timed-text subtitles
+
+icon: https://raw.githubusercontent.com/github/explore/main/topics/ffmpeg/ffmpeg.png
+
+install:
+  -  ffmpeg
+  -  ffmpeg-tools

@@ -1,0 +1,8 @@
+name: openh264
+commit: 0a48f4d2e9be2abb4fb01b4c3be83cf44ce91a6e
+ai: H
+description: |
+  OpenH264 is a codec library which supports H.264 encoding and decoding.
+  It is suitable for use in real time applications such as WebRTC.
+install:
+  - libopenh264-7
