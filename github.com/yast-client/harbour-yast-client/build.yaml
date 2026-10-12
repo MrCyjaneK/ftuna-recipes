@@ -1,5 +1,5 @@
 name: YAST Client
-commit: 1b48e2414e8fcceb8e57250ebf0850cedd22114e
+commit: 7540ad045eebee30e8d736edc005565768586360
 ai: H
 description: |
   YAST Client is a yet another SailfishOS Telegram client. Its goal isn't to be the future of SailfishOS Telegram clients, neither is to have the most features possible. The main point of it is to simple be a good client for using it daily on your phone today.
