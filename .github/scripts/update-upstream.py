@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Open one pull request per github.com recipe whose upstream moved.
 
-Only github.com/<owner>/<repo> recipes are checked. Each check is one
-ls-remote of HEAD and tags, with redirects and git config ignored so the
-request cannot be sent to another host. When the pinned hash is a version
-tag, follow the newest tag in that series. Otherwise follow the default
-branch tip. One open pull request per recipe is kept. A later upstream
-commit updates that same request. If the request was left open and both
-repositories moved, it is rebased onto the latest base and force-pushed.
+Only github.com/<owner>/<repo> recipes are checked. Every *.yaml file in
+that directory is a recipe, and they share one pull request. Each file
+keeps its own pinned commit. Each check is one ls-remote of HEAD and tags,
+with redirects and git config ignored so the request cannot be sent to
+another host. When the pinned hash is a version tag, follow the newest tag
+in that series. Otherwise follow the default branch tip. One open pull
+request per repository is kept. A later upstream commit updates that same
+request. If the request was left open and both repositories moved, it is
+rebased onto the latest base and force-pushed.
 """
 
 from __future__ import annotations
@@ -46,6 +48,12 @@ class Plan:
     from_tag: str | None
     to_tag: str | None
     upstream_branch: str
+
+
+@dataclass
+class FileUpdate:
+    relative: str
+    plan: Plan
 
 
 def git_net(*args: str) -> list[str]:
@@ -90,7 +98,7 @@ def series_prefix(name: str) -> str:
 def read_commit(text: str) -> str:
     match = COMMIT_LINE.search(text)
     if not match:
-        raise RuntimeError("build.yaml has no 40-character commit hash")
+        raise RuntimeError("recipe yaml has no 40-character commit hash")
     return match.group(1)
 
 
@@ -101,7 +109,7 @@ def replace_commit(text: str, old: str, new: str) -> str:
     )
     updated, count = pattern.subn(new, text)
     if count == 0:
-        raise RuntimeError(f"commit {old} was not found in build.yaml")
+        raise RuntimeError(f"commit {old} was not found in the recipe yaml")
     return updated
 
 
@@ -216,16 +224,16 @@ def choose_tag(tags: list[Tag], pin: str) -> tuple[Tag, Tag] | None:
     return current, best
 
 
-def plan_for(owner: str, repo: str, pin: str) -> Plan | None:
-    branch, head, tags = list_refs(owner, repo)
+def plan_from_refs(branch: str, head: str, tags: list[Tag], pin: str, label: str) -> Plan | None:
     chosen = choose_tag(tags, pin)
+    prefix = f"  {label}: " if label else "  "
     if chosen:
         current, best = chosen
         if best.sha.lower() == pin.lower():
             note = ""
             if head.lower() != pin.lower():
                 note = f"; {branch} is at {head[:12]} and is ignored because this pin is a tag"
-            print(f"  up to date (tag {current.name}){note}")
+            print(f"{prefix}up to date (tag {current.name}){note}")
             return None
         return Plan(
             mode="tag",
@@ -237,7 +245,7 @@ def plan_for(owner: str, repo: str, pin: str) -> Plan | None:
         )
 
     if head.lower() == pin.lower():
-        print(f"  up to date ({branch})")
+        print(f"{prefix}up to date ({branch})")
         return None
     return Plan(
         mode="commit",
@@ -249,15 +257,36 @@ def plan_for(owner: str, repo: str, pin: str) -> Plan | None:
     )
 
 
+def pending_updates(owner: str, repo: str, recipe: Path, root: Path) -> list[FileUpdate]:
+    files = sorted(path for path in recipe.glob("*.yaml") if path.is_file())
+    if not files:
+        raise RuntimeError(f"{recipe} has no recipe yaml")
+    branch, head, tags = list_refs(owner, repo)
+    out = []
+    for path in files:
+        pin = read_commit(path.read_text())
+        plan = plan_from_refs(branch, head, tags, pin, path.name)
+        if plan is None:
+            continue
+        out.append(FileUpdate(path.relative_to(root).as_posix(), plan))
+    return out
+
+
 def recipe_dirs(root: Path, recipe_filter: str) -> list[Path]:
     found = []
-    for manifest in sorted(root.glob(f"{HOST}/*/*/build.yaml")):
+    seen: set[str] = set()
+    for manifest in sorted(root.glob(f"{HOST}/*/*/*.yaml")):
         parts = manifest.relative_to(root).parts
         if len(parts) != 4 or parts[0] != HOST:
             continue
         if not NAME.fullmatch(parts[1]) or not NAME.fullmatch(parts[2]):
             continue
-        found.append(manifest.parent)
+        parent = manifest.parent
+        key = parent.relative_to(root).as_posix()
+        if key in seen:
+            continue
+        seen.add(key)
+        found.append(parent)
     filt = recipe_filter.strip().strip("/")
     if not filt:
         return found
@@ -319,8 +348,8 @@ def file_at_ref(relative: str, sha: str) -> str | None:
         return None
 
 
-def declined_target(branch: str, base: str, target: str, relative: str) -> bool:
-    """True when the newest unmerged closed PR already proposed this commit."""
+def declined_files(branch: str, base: str, files: list[FileUpdate]) -> bool:
+    """True when the newest unmerged closed PR already proposed these commits."""
     listed = gh_json(
         [
             "pr",
@@ -342,13 +371,16 @@ def declined_target(branch: str, base: str, target: str, relative: str) -> bool:
     chosen = next((pr for pr in listed if isinstance(pr, dict) and not pr.get("mergedAt")), None)
     if not chosen or not chosen.get("headRefOid"):
         return False
-    text = file_at_ref(relative, str(chosen["headRefOid"]))
-    if text is None:
-        return False
-    try:
-        return read_commit(text).lower() == target.lower()
-    except RuntimeError:
-        return False
+    for item in files:
+        text = file_at_ref(item.relative, str(chosen["headRefOid"]))
+        if text is None:
+            return False
+        try:
+            if read_commit(text).lower() != item.plan.new.lower():
+                return False
+        except RuntimeError:
+            return False
+    return True
 
 
 def find_open_pr(branch: str, base: str) -> dict | None:
@@ -422,22 +454,23 @@ def choose_update(has_pr: bool, pr_pin: str | None, target: str, base_moved: boo
     return "fast-forward"
 
 
-def pr_body(owner: str, repo: str, plan: Plan, recipe: Path, root: Path) -> str:
-    link = f"https://github.com/{owner}/{repo}/compare/{plan.old}...{plan.new}"
-    lines = [
-        f"Updates `{recipe.relative_to(root).as_posix()}` from `{plan.old}` to `{plan.new}`.",
-        "",
-    ]
-    if plan.mode == "tag":
-        lines.append(
-            f"The pinned commit is tag `{one_line(plan.from_tag or '')}`, and `{one_line(plan.to_tag or '')}` is the newest tag in that series."
-        )
-    else:
-        lines.append(
-            f"The pinned commit is not a tag. `{plan.upstream_branch}` now points at `{plan.new}`."
-        )
-    lines.extend(["", f"Compare: {link}"])
-    return "\n".join(lines) + "\n"
+def pr_body(owner: str, repo: str, files: list[FileUpdate], recipe: Path, root: Path) -> str:
+    lines = [f"Updates `{recipe.relative_to(root).as_posix()}`.", ""]
+    for item in files:
+        plan = item.plan
+        name = Path(item.relative).name
+        lines.append(f"`{name}` moves from `{plan.old}` to `{plan.new}`.")
+        if plan.mode == "tag":
+            lines.append(
+                f"The pinned commit is tag `{one_line(plan.from_tag or '')}`, and `{one_line(plan.to_tag or '')}` is the newest tag in that series."
+            )
+        else:
+            lines.append(
+                f"The pinned commit is not a tag. `{plan.upstream_branch}` now points at `{plan.new}`."
+            )
+        lines.append(f"Compare: https://github.com/{owner}/{repo}/compare/{plan.old}...{plan.new}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def one_line(value: str) -> str:
@@ -451,34 +484,48 @@ def pr_title(owner: str, repo: str, plan: Plan) -> str:
     return f"update {owner}/{repo} to {plan.new[:12]}"
 
 
-def commit_message(owner: str, repo: str, plan: Plan) -> str:
-    title = pr_title(owner, repo, plan)
-    if plan.mode == "tag":
-        detail = f"Follow tag {one_line(plan.to_tag or '')} (was {one_line(plan.from_tag or '')})."
-    else:
-        detail = f"Follow new commits on {plan.upstream_branch}."
-    return f"{title}\n\n{detail}\n"
+def title_for(owner: str, repo: str, files: list[FileUpdate]) -> str:
+    if len({item.plan.new.lower() for item in files}) == 1:
+        return pr_title(owner, repo, files[0].plan)
+    return f"update {owner}/{repo}"
 
 
-def classify_update(
-    branch: str,
-    base_branch: str,
-    target: str,
-    relative: str,
-) -> tuple[str, dict | None]:
+def commit_message(owner: str, repo: str, files: list[FileUpdate]) -> str:
+    lines = [title_for(owner, repo, files), ""]
+    for item in files:
+        name = Path(item.relative).name
+        plan = item.plan
+        if plan.mode == "tag":
+            lines.append(
+                f"{name}: follow tag {one_line(plan.to_tag or '')} (was {one_line(plan.from_tag or '')})."
+            )
+        else:
+            lines.append(f"{name}: follow new commits on {plan.upstream_branch}.")
+    return "\n".join(lines) + "\n"
+
+
+def classify_files(branch: str, base_branch: str, files: list[FileUpdate]) -> tuple[str, dict | None]:
     existing = find_open_pr(branch, base_branch)
     if existing is None:
         return "open", None
     head = str(existing.get("headRefOid") or "")
-    text = file_at_ref(relative, head) if head else None
-    pin = None
-    if text is not None:
-        try:
-            pin = read_commit(text)
-        except RuntimeError:
-            pin = None
-    moved = bool(head) and pin is not None and pin.lower() != target.lower() and recipes_base_moved(base_branch, head)
-    return choose_update(True, pin, target, moved), existing
+    stale = False
+    for item in files:
+        text = file_at_ref(item.relative, head) if head else None
+        pin = None
+        if text is not None:
+            try:
+                pin = read_commit(text)
+            except RuntimeError:
+                pin = None
+        if pin is None:
+            return choose_update(True, None, item.plan.new, False), existing
+        if pin.lower() != item.plan.new.lower():
+            stale = True
+    if not stale:
+        return "current", existing
+    moved = bool(head) and recipes_base_moved(base_branch, head)
+    return choose_update(True, "stale", files[0].plan.new, moved), existing
 
 
 def prepare_branch(branch: str, base_sha: str, kind: str) -> None:
@@ -523,22 +570,25 @@ def apply_plan(
     recipe: Path,
     owner: str,
     repo: str,
-    plan: Plan,
+    files: list[FileUpdate],
     base_branch: str,
     base_sha: str,
     kind: str,
     existing: dict | None,
 ) -> None:
     branch = branch_for(recipe, root)
-    relative = recipe.relative_to(root).as_posix() + "/build.yaml"
     rebase = kind == "rebase"
     prepare_branch(branch, base_sha, kind)
-    path = root / relative
-    if not path.is_file():
-        run(["git", "checkout", base_sha, "--", relative])
-    text = path.read_text()
-    path.write_text(replace_commit(text, read_commit(text), plan.new))
-    run(["git", "add", "--", relative])
+    for item in files:
+        path = root / item.relative
+        if not path.is_file():
+            run(["git", "checkout", base_sha, "--", item.relative])
+        text = path.read_text()
+        current = read_commit(text)
+        if current.lower() == item.plan.new.lower():
+            continue
+        path.write_text(replace_commit(text, current, item.plan.new))
+        run(["git", "add", "--", item.relative])
     staged = subprocess.run(["git", "diff", "--cached", "--quiet"])
     if staged.returncode == 0:
         print("  no file change")
@@ -554,15 +604,15 @@ def apply_plan(
             "user.email=41898282+github-actions[bot]@users.noreply.github.com",
             "commit",
             "-m",
-            commit_message(owner, repo, plan),
+            commit_message(owner, repo, files),
         ]
     )
     expected = str(existing.get("headRefOid") or "") if rebase and existing else None
     if rebase and not expected:
         raise RuntimeError("open pull request has no head commit")
     push_branch(branch, base_branch, expected or None)
-    title = pr_title(owner, repo, plan)
-    body = pr_body(owner, repo, plan, recipe, root)
+    title = title_for(owner, repo, files)
+    body = pr_body(owner, repo, files, recipe, root)
     if existing:
         run(["gh", "pr", "edit", str(existing["number"]), "--title", title, "--body", body])
         action = "rebased" if rebase else "updated"
@@ -639,41 +689,39 @@ def main() -> int:
         label = f"github.com/{owner}/{repo}"
         print(f"::group::{label}")
         try:
-            pin = read_commit((recipe / "build.yaml").read_text())
-            plan = plan_for(owner, repo, pin)
-            if plan is not None:
-                target = plan.to_tag or plan.new[:12]
-                print(f"  update {plan.old[:12]} -> {target}")
-                relative = recipe.relative_to(root).as_posix() + "/build.yaml"
-                branch = branch_for(recipe, root)
-                kind, existing = classify_update(branch, base_branch, plan.new, relative)
-                if kind == "current" and existing:
-                    print(f"  pull request {existing['url']} already has {target}")
-                    continue
-                if kind == "open" and declined_target(branch, base_branch, plan.new, relative):
-                    print("  a closed pull request already proposed this commit")
-                    continue
-                action = {
-                    "open": "open a pull request",
-                    "fast-forward": "update the open pull request",
-                    "rebase": "rebase the open pull request and force-push",
-                }[kind]
-                print(f"  update {plan.old[:12]} -> {target}: {action}")
-                if dry_run:
-                    opened += 1
-                else:
-                    apply_plan(
-                        root,
-                        recipe,
-                        owner,
-                        repo,
-                        plan,
-                        base_branch,
-                        base_sha,
-                        kind,
-                        existing,
-                    )
-                    opened += 1
+            files = pending_updates(owner, repo, recipe, root)
+            if not files:
+                continue
+            branch = branch_for(recipe, root)
+            kind, existing = classify_files(branch, base_branch, files)
+            names = ", ".join(Path(item.relative).name for item in files)
+            if kind == "current" and existing:
+                print(f"  pull request {existing['url']} already has {names}")
+                continue
+            if kind == "open" and declined_files(branch, base_branch, files):
+                print("  a closed pull request already proposed this commit")
+                continue
+            action = {
+                "open": "open a pull request",
+                "fast-forward": "update the open pull request",
+                "rebase": "rebase the open pull request and force-push",
+            }[kind]
+            print(f"  {names}: {action}")
+            if dry_run:
+                opened += 1
+            else:
+                apply_plan(
+                    root,
+                    recipe,
+                    owner,
+                    repo,
+                    files,
+                    base_branch,
+                    base_sha,
+                    kind,
+                    existing,
+                )
+                opened += 1
         except Exception as exc:  # noqa: BLE001 — keep going so one repo cannot block the rest
             failed.append(f"{label}: {exc}")
             print(f"::error::{label}: {exc}")

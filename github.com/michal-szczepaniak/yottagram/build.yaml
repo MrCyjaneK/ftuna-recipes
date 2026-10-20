@@ -1,0 +1,39 @@
+name: Yottagram
+commit: 55caeacfb3c85e2a7a0424f9c5d6e72ab60161c6
+path: .
+ai: H
+description: |
+  If you want calls to be working you need to install voicecall plugin. Remember to reboot phone afterwards! Yottagram should pull it along but it's not required.
+
+  If you want to have yottagram in share menu you need to install transferengine plugin.
+
+  A telegram client that's superfast and super smooth. We want to make it as close to official app as possible. Forget the days of using telegram desktop or laggy crashy apps. Welcome to the future.
+
+  Trello (development process): https://trello.com/b/nDmAfkoG/yottagram-development-issues
+
+  Github: https://github.com/Michal-Szczepaniak/Yottagram
+
+  Paypal: https://www.paypal.me/MisterMagister
+
+  Patreon: https://www.patreon.com/Mister_Magister
+icon: https://raw.githubusercontent.com/Michal-Szczepaniak/Yottagram/refs/heads/master/Yottagram/icons/128x128/yottagram.png
+screenshots:
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017006.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017008.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017009.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017010.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017011.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017012.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017013.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017014.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017015.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017016.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017017.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017018.png
+  - https://openrepos.net/sites/default/files/packages/2194/screenshot-screenshot20201017019.png
+
+install:
+  - yottagram
+
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key

@@ -1,0 +1,12 @@
+diff --git a/Yottagram/Yottagram.pro b/Yottagram/Yottagram.pro
+--- a/Yottagram/Yottagram.pro
++++ b/Yottagram/Yottagram.pro
+@@ -266,7 +266,7 @@ DBUS_INTERFACES += com.verdanditeam.yottagram.calls.xml
+ 
+ # https://github.com/Samsung/rlottie.git
+ 
+-RLOTTIE_CONFIG = $${PWD}/vendor/rlottie/src/vector/config.h
++RLOTTIE_CONFIG = vendor/rlottie/src/vector/config.h
+ PRE_TARGETDEPS += $${RLOTTIE_CONFIG}
+ QMAKE_EXTRA_TARGETS += rlottie_config
+ 
