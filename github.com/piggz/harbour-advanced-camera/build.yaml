@@ -1,6 +1,6 @@
 name: Advanced Camera
 commit: cdcef3fb69267178f3f224b12f5f6b862a205f6e
-path: rpm/harbour-advanced-camera.yaml
+path: .
 ai: H
 description: |
   Advanced Camera is a community camera application for Sailfish devices. It queries and sets the parameters supported by the device.

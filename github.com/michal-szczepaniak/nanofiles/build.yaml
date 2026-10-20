@@ -1,6 +1,6 @@
 name: Nanofiles
 commit: f50103bb6bd016daadb403a8a062981c416c3fc0
-path: rpm/nanofiles.spec
+path: .
 ai: H
 description: |
   Nanofiles is file manager app.

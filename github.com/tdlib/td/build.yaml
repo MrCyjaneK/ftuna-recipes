@@ -1,6 +1,6 @@
 name: tdlib
 commit: c15d3f5a5de6e3ba5839822c451152e5e18bb700
-path: rpm/tdlib.spec
+path: .
 ai: H
 description: |
   tdlib is a library for building Telegram clients.
