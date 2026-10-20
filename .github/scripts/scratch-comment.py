@@ -60,7 +60,7 @@ def render(run_id: str, rows: list[Row]) -> str:
     lines = [
         f"<!-- ftuna-scratch {run_id} -->",
         "",
-        f"[Build logs]({logs})",
+        f"[Dispatch]({logs})",
         "",
         "| Recipe | Status | Result |",
         "| --- | --- | --- |",
@@ -71,7 +71,14 @@ def render(run_id: str, rows: list[Row]) -> str:
     return "\n".join(lines)
 
 
-def apply_update(rows: list[Row], recipe: str, status: str, result: str, if_open: bool) -> tuple[list[Row], bool]:
+def apply_update(
+    rows: list[Row],
+    recipe: str,
+    status: str,
+    result: str,
+    if_open: bool,
+    only_status: str = "",
+) -> tuple[list[Row], bool]:
     found = False
     changed = False
     out: list[Row] = []
@@ -80,6 +87,9 @@ def apply_update(rows: list[Row], recipe: str, status: str, result: str, if_open
             out.append(current)
             continue
         found = True
+        if only_status and current[1] != only_status:
+            out.append(current)
+            continue
         if if_open and current[1] not in OPEN:
             out.append(current)
             continue
@@ -169,7 +179,7 @@ def init(pr: str, run_id: str, recipes: list[str]) -> None:
     raise CommentError("could not post the scratch comment")
 
 
-def update(pr: str, run_id: str, recipe: str, status: str, result: str, if_open: bool) -> None:
+def update(pr: str, run_id: str, recipe: str, status: str, result: str, if_open: bool, only_status: str = "") -> None:
     result = clean_cell(result)
     # Jobs start together. Spread the first read so they do not all write one stale table.
     if os.environ.get("SCRATCH_COMMENT_SPREAD") == "1":
@@ -184,7 +194,7 @@ def update(pr: str, run_id: str, recipe: str, status: str, result: str, if_open:
             if current_run != run_id:
                 print(f"scratch comment belongs to run {current_run or 'unknown'}, not {run_id}", file=sys.stderr)
                 return
-            rows, changed = apply_update(rows, recipe, status, result, if_open)
+            rows, changed = apply_update(rows, recipe, status, result, if_open, only_status)
             if not changed:
                 return
             body = render(run_id, rows)
@@ -229,7 +239,7 @@ def self_test() -> None:
     ]
     body = render("99", rows)
     assert parse(body) == ("99", rows)
-    assert "[Build logs](https://github.com/acme/recipes/actions/runs/99)" in body
+    assert "[Dispatch](https://github.com/acme/recipes/actions/runs/99)" in body
     queued = [("github.com/abseil/abseil-cpp", "queued", ""), ("github.com/cisco/openh264", "building", "")]
     updated, changed = apply_update(queued, "github.com/cisco/openh264", "success", "https://example.test/a", False)
     assert changed
@@ -264,16 +274,17 @@ def main(argv: list[str]) -> int:
 
     init_cmd = sub.add_parser("init")
     init_cmd.add_argument("--pr", default=os.environ.get("PR_NUMBER", ""))
-    init_cmd.add_argument("--run-id", default=os.environ.get("GITHUB_RUN_ID", ""))
+    init_cmd.add_argument("--run-id", default=os.environ.get("PLAN_RUN_ID") or os.environ.get("GITHUB_RUN_ID", ""))
     init_cmd.add_argument("--recipes", required=True)
 
     update_cmd = sub.add_parser("update")
     update_cmd.add_argument("--pr", default=os.environ.get("PR_NUMBER", ""))
-    update_cmd.add_argument("--run-id", default=os.environ.get("GITHUB_RUN_ID", ""))
+    update_cmd.add_argument("--run-id", default=os.environ.get("PLAN_RUN_ID") or os.environ.get("GITHUB_RUN_ID", ""))
     update_cmd.add_argument("--recipe", default=os.environ.get("RECIPE", ""))
     update_cmd.add_argument("--status", required=True)
     update_cmd.add_argument("--result", default="")
     update_cmd.add_argument("--if-open", action="store_true")
+    update_cmd.add_argument("--only-status", default="")
 
     args = parser.parse_args(argv)
     try:
@@ -286,7 +297,7 @@ def main(argv: list[str]) -> int:
             raise CommentError(f"unknown status {args.status}")
         if not args.recipe or "`" in args.recipe or "|" in args.recipe:
             raise CommentError("recipe is required")
-        update(pr, run_id, args.recipe, args.status, args.result, args.if_open)
+        update(pr, run_id, args.recipe, args.status, args.result, args.if_open, args.only_status)
         return 0
     except CommentError as exc:
         print(f"scratch comment: {exc}", file=sys.stderr)

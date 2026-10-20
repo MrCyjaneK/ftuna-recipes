@@ -1,0 +1,171 @@
+name: Scratchpad build
+
+on:
+  workflow_call:
+    inputs:
+      pull_request:
+        description: Pull request number
+        required: true
+        type: string
+      recipe:
+        description: Recipe id
+        required: true
+        type: string
+      yaml:
+        description: Recipe file
+        required: true
+        type: string
+      scratch_name:
+        description: Scratch repository name
+        required: true
+        type: string
+      plan_run_id:
+        description: Scratchpad run id
+        required: true
+        type: string
+      head_repo:
+        description: Pull request head repository
+        required: true
+        type: string
+      head_sha:
+        description: Pull request head commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: scratchpad-build-${{ inputs.pull_request }}-${{ inputs.recipe }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FTUNA_RECIPES: ${{ github.workspace }}/src
+      PR_NUMBER: ${{ inputs.pull_request }}
+      PLAN_RUN_ID: ${{ inputs.plan_run_id }}
+      RECIPE: ${{ inputs.recipe }}
+      YAML: ${{ inputs.yaml }}
+      SCRATCH_NAME: ${{ inputs.scratch_name }}
+      HEAD_REPO: ${{ inputs.head_repo }}
+      HEAD_SHA: ${{ inputs.head_sha }}
+      SCRATCH_COMMENT_SPREAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          path: _ci
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: true
+
+      - name: Check inputs
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || { echo "bad pull request number" >&2; exit 1; }
+          [[ "$PLAN_RUN_ID" =~ ^[0-9]+$ ]] || { echo "bad plan run id" >&2; exit 1; }
+          [[ "$HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "bad head sha" >&2; exit 1; }
+          [[ "$HEAD_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo "bad head repo" >&2; exit 1; }
+          [[ "$SCRATCH_NAME" =~ ^[a-z0-9][a-z0-9_-]{0,79}$ ]] || { echo "bad scratch name" >&2; exit 1; }
+
+      - name: Mark building
+        run: |
+          set -euo pipefail
+          logs="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          python3 "$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py" update --status building --result "$logs"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.head_repo }}
+          ref: ${{ inputs.head_sha }}
+          persist-credentials: false
+          path: src
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Install sfosbuild and ftuna
+        run: |
+          go install github.com/mrcyjanek/sfosbuild@latest
+          go install github.com/mrcyjanek/ftuna/cmd/ftuna@latest
+
+      - name: Restore scratch token
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.config/ftuna/scratch-token
+          key: ftuna-scratch-token-${{ inputs.pull_request }}
+          restore-keys: |
+            ftuna-scratch-token-${{ inputs.pull_request }}-
+
+      - name: Register scratch account
+        run: ftuna scratch register
+
+      - name: Build
+        working-directory: src
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          logs="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "recipe=$RECIPE scratch=$SCRATCH_NAME"
+
+          python3 - "$YAML" <<'PY'
+          import os, pathlib, sys
+          raw = sys.argv[1]
+          if not raw or raw.startswith(("-", "/")) or "\n" in raw or "\x00" in raw:
+              sys.exit("refusing recipe path")
+          parts = raw.split("/")
+          if any(part in ("", ".", "..") for part in parts):
+              sys.exit("refusing recipe path")
+          path = pathlib.Path(raw)
+          root = pathlib.Path(".").resolve()
+          real = path.resolve()
+          if os.path.commonpath([root, real]) != str(root):
+              sys.exit("refusing recipe path")
+          if not path.is_file():
+              sys.exit("missing recipe file")
+          lines = path.read_text().splitlines(keepends=True)
+          out = [line for line in lines if not line.startswith("arches:")]
+          if out and not out[-1].endswith("\n"):
+              out[-1] += "\n"
+          out.append("arches: aarch64\n")
+          path.write_text("".join(out))
+          PY
+
+          set +e
+          ftuna 5.1.0.11 "$RECIPE" "$SCRATCH_NAME" 2>&1 | tee "$RUNNER_TEMP/ftuna.log"
+          code=$?
+          set -e
+          if [[ "$code" -ne 0 ]]; then
+            python3 "$script" update --status failed --result "$logs"
+            exit "$code"
+          fi
+          url=$(grep -oE 'https://scratchpad-repo\.ftuna\.eu/[0-9a-f]+/[^[:space:]]+' "$RUNNER_TEMP/ftuna.log" | tail -n 1 || true)
+          if [[ -z "$url" ]]; then
+            python3 "$script" update --status failed --result "no scratch URL"
+            exit 1
+          fi
+          echo "scratch $url"
+          python3 "$script" update --status success --result "$url"
+
+      - name: Mark failed
+        if: failure()
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          [[ -f "$script" ]] || exit 0
+          logs="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          python3 "$script" update --status failed --result "$logs" --if-open
+
+      - name: Mark cancelled
+        if: cancelled()
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          [[ -f "$script" ]] || exit 0
+          logs="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          python3 "$script" update --status cancelled --result "$logs" --if-open
