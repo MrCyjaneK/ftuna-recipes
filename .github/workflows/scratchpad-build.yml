@@ -36,10 +36,6 @@ permissions:
   contents: read
   pull-requests: write
 
-concurrency:
-  group: scratchpad-build-${{ inputs.pull_request }}-${{ inputs.recipe }}
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
