@@ -1,5 +1,6 @@
 name: SShazam
 commit: f8446df79a523d17739a9e5520dd454ae9e15733
+path: rpm/harbour-sshazam.spec
 ai: H
 description: |
   SShazam

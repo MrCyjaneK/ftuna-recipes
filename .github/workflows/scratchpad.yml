@@ -23,8 +23,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04-arm
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
+      repo: ${{ steps.pr.outputs.repo }}
+      sha: ${{ steps.pr.outputs.sha }}
+      count: ${{ steps.recipes.outputs.count }}
+      matrix: ${{ steps.recipes.outputs.matrix }}
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -47,12 +53,16 @@ jobs:
           repository: ${{ steps.pr.outputs.repo }}
           ref: ${{ steps.pr.outputs.sha }}
           persist-credentials: false
+          path: src
 
       - id: recipes
+        working-directory: src
         env:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_USER: ${{ steps.pr.outputs.user }}
         run: |
           set -euo pipefail
+          export LC_ALL=C
           declare -A yaml_of=()
 
           under_extra() {
@@ -106,6 +116,12 @@ jobs:
             done
           }
 
+          sanitize() {
+            printf '%s' "$1" \
+              | tr '[:upper:]' '[:lower:]' \
+              | sed -e 's/[^a-z0-9_-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//'
+          }
+
           gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --jq '.[] | .filename' > "$RUNNER_TEMP/pr-files.txt"
           while IFS= read -r f; do
             [[ -n "$f" ]] || continue
@@ -122,49 +138,14 @@ jobs:
           if [[ ${#yaml_of[@]} -eq 0 ]]; then
             echo "no recipe yaml, overlay, or patch changes"
             echo "count=0" >> "$GITHUB_OUTPUT"
+            printf 'matrix=%s\n' '[{"recipe":"skip","yaml":"skip","name":"skip"}]' >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
           : > "$RUNNER_TEMP/changed-recipes.txt"
           while IFS= read -r id; do
             printf '%s\t%s\n' "$id" "${yaml_of[$id]}" >> "$RUNNER_TEMP/changed-recipes.txt"
           done < <(printf '%s\n' "${!yaml_of[@]}" | sort)
-          echo "count=${#yaml_of[@]}" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/setup-go@v5
-        if: steps.recipes.outputs.count != '0'
-        with:
-          go-version: stable
-
-      - name: Install sfosbuild and ftuna
-        if: steps.recipes.outputs.count != '0'
-        run: |
-          go install github.com/mrcyjanek/sfosbuild@latest
-          go install github.com/mrcyjanek/ftuna/cmd/ftuna@latest
-
-      - uses: actions/cache@v4
-        if: steps.recipes.outputs.count != '0'
-        with:
-          path: ~/.config/ftuna/scratch-token
-          key: ftuna-scratch-token-${{ steps.pr.outputs.number }}
-
-      - name: Register scratch account
-        if: steps.recipes.outputs.count != '0'
-        run: ftuna scratch register
-
-      - name: Build and comment
-        if: steps.recipes.outputs.count != '0'
-        env:
-          FTUNA_RECIPES: ${{ github.workspace }}
-          PR_USER: ${{ steps.pr.outputs.user }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-        run: |
-          set -euo pipefail
-
-          sanitize() {
-            printf '%s' "$1" \
-              | tr '[:upper:]' '[:lower:]' \
-              | sed -e 's/[^a-z0-9_-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//'
-          }
 
           mapfile -t recipes < "$RUNNER_TEMP/changed-recipes.txt"
           user=$(sanitize "$PR_USER")
@@ -177,12 +158,13 @@ jobs:
             multi=1
           fi
 
-          lines=()
-          fail=0
+          : > "$RUNNER_TEMP/recipe-ids.txt"
+          : > "$RUNNER_TEMP/matrix-items.jsonl"
           i=0
           for line in "${recipes[@]}"; do
             recipe=${line%%$'\t'*}
             yaml=${line#*$'\t'}
+            printf '%s\n' "$recipe" >> "$RUNNER_TEMP/recipe-ids.txt"
             if [[ "$multi" -eq 1 ]]; then
               suffix=$i
             else
@@ -198,10 +180,156 @@ jobs:
             fi
             suffix=${suffix:0:max_suffix}
             name="${prefix}${suffix}"
+            jq -nc --arg recipe "$recipe" --arg yaml "$yaml" --arg name "$name" \
+              '{recipe:$recipe,yaml:$yaml,name:$name}' >> "$RUNNER_TEMP/matrix-items.jsonl"
+            i=$((i + 1))
+          done
+          printf 'count=%s\n' "${#recipes[@]}" >> "$GITHUB_OUTPUT"
+          printf 'matrix=%s\n' "$(jq -sc '.' "$RUNNER_TEMP/matrix-items.jsonl")" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/recipe-ids.txt"
 
-            python3 - "$yaml" <<'PY'
-          import pathlib, sys
-          path = pathlib.Path(sys.argv[1])
+      - uses: actions/checkout@v4
+        if: success() && steps.recipes.outputs.count != '0'
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          path: _ci
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: true
+
+      - id: comment
+        if: success() && steps.recipes.outputs.count != '0'
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          python3 "$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py" init --recipes "$RUNNER_TEMP/recipe-ids.txt"
+          echo "ok=1" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-go@v5
+        if: success() && steps.recipes.outputs.count != '0'
+        with:
+          go-version: stable
+
+      - name: Install ftuna
+        if: success() && steps.recipes.outputs.count != '0'
+        run: go install github.com/mrcyjanek/ftuna/cmd/ftuna@latest
+
+      - name: Restore scratch token
+        id: token
+        if: success() && steps.recipes.outputs.count != '0'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.config/ftuna/scratch-token
+          key: ftuna-scratch-token-${{ steps.pr.outputs.number }}-${{ github.run_id }}
+          restore-keys: |
+            ftuna-scratch-token-${{ steps.pr.outputs.number }}-
+
+      - name: Register scratch account
+        if: success() && steps.recipes.outputs.count != '0'
+        run: ftuna scratch register
+
+      - name: Save scratch token
+        if: success() && steps.recipes.outputs.count != '0' && steps.token.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.config/ftuna/scratch-token
+          key: ftuna-scratch-token-${{ steps.pr.outputs.number }}-${{ github.run_id }}
+
+      - name: Mark plan failed
+        if: failure() && steps.comment.outputs.ok == '1'
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          [[ -f "$script" && -f "$RUNNER_TEMP/recipe-ids.txt" ]] || exit 0
+          while IFS= read -r recipe || [[ -n "$recipe" ]]; do
+            [[ -n "$recipe" ]] || continue
+            RECIPE="$recipe" python3 "$script" update --status failed --result "could not start" --if-open \
+              || echo "could not update $recipe" >&2
+          done < "$RUNNER_TEMP/recipe-ids.txt"
+
+  build:
+    name: ${{ matrix.recipe }}
+    needs: plan
+    if: success() && needs.plan.outputs.count != '0'
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FTUNA_RECIPES: ${{ github.workspace }}/src
+      PR_NUMBER: ${{ needs.plan.outputs.number }}
+      SCRATCH_COMMENT_SPREAD: "1"
+      RECIPE: ${{ matrix.recipe }}
+      YAML: ${{ matrix.yaml }}
+      SCRATCH_NAME: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.plan.outputs.repo }}
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+          path: src
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          path: _ci
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: true
+
+      - name: Mark building
+        run: python3 "$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py" update --status building
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Install sfosbuild and ftuna
+        run: |
+          go install github.com/mrcyjanek/sfosbuild@latest
+          go install github.com/mrcyjanek/ftuna/cmd/ftuna@latest
+
+      - name: Restore scratch token
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.config/ftuna/scratch-token
+          key: ftuna-scratch-token-${{ needs.plan.outputs.number }}-${{ github.run_id }}
+
+      - name: Register scratch account
+        run: ftuna scratch register
+
+      - name: Build
+        working-directory: src
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          if [[ ! "$SCRATCH_NAME" =~ ^[a-z0-9][a-z0-9_-]{0,79}$ ]]; then
+            echo "bad scratch name" >&2
+            exit 1
+          fi
+          echo "recipe=$RECIPE scratch=$SCRATCH_NAME"
+
+          python3 - "$YAML" <<'PY'
+          import os, pathlib, sys
+          raw = sys.argv[1]
+          if not raw or raw.startswith(("-", "/")) or "\n" in raw or "\x00" in raw:
+              sys.exit("refusing recipe path")
+          parts = raw.split("/")
+          if any(part in ("", ".", "..") for part in parts):
+              sys.exit("refusing recipe path")
+          path = pathlib.Path(raw)
+          root = pathlib.Path(".").resolve()
+          real = path.resolve()
+          if os.path.commonpath([root, real]) != str(root):
+              sys.exit("refusing recipe path")
+          if not path.is_file():
+              sys.exit("missing recipe file")
           lines = path.read_text().splitlines(keepends=True)
           out = [line for line in lines if not line.startswith("arches:")]
           if out and not out[-1].endswith("\n"):
@@ -210,45 +338,34 @@ jobs:
           path.write_text("".join(out))
           PY
 
-            echo "::group::ftuna 5.1.0.11 ${recipe} ${name}"
-            set +e
-            log=$(ftuna 5.1.0.11 "$recipe" "$name" 2>&1)
-            status=$?
-            set -e
-            printf '%s\n' "$log"
-            echo "::endgroup::"
-
-            if [[ "$status" -ne 0 ]]; then
-              lines+=("${recipe} build failed")
-              fail=1
-            else
-              url=$(printf '%s\n' "$log" | grep -oE 'https://scratchpad-repo\.ftuna\.eu/[0-9a-f]+/[^[:space:]]+' | tail -n 1 || true)
-              if [[ -z "$url" ]]; then
-                lines+=("${recipe} built but printed no scratch URL")
-                fail=1
-              else
-                lines+=("${recipe} ${url}")
-              fi
-            fi
-            i=$((i + 1))
-          done
-
-          {
-            echo '<!-- ftuna-scratch -->'
-            printf '%s\n' "${lines[@]}"
-          } > "$RUNNER_TEMP/scratch-comment.md"
-
-          gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-            --jq '.[] | select(.body | contains("<!-- ftuna-scratch -->")) | .id' \
-            > "$RUNNER_TEMP/comment-ids.txt"
-          comment_id=$(head -n 1 "$RUNNER_TEMP/comment-ids.txt")
-          jq -n --rawfile body "$RUNNER_TEMP/scratch-comment.md" '{body:$body}' > "$RUNNER_TEMP/scratch-comment.json"
-          if [[ -n "$comment_id" ]]; then
-            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" \
-              --input "$RUNNER_TEMP/scratch-comment.json" > /dev/null
-          else
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-              --input "$RUNNER_TEMP/scratch-comment.json" > /dev/null
+          set +e
+          ftuna 5.1.0.11 "$RECIPE" "$SCRATCH_NAME" 2>&1 | tee "$RUNNER_TEMP/ftuna.log"
+          code=$?
+          set -e
+          if [[ "$code" -ne 0 ]]; then
+            python3 "$script" update --status failed --result "build failed"
+            exit "$code"
           fi
+          url=$(grep -oE 'https://scratchpad-repo\.ftuna\.eu/[0-9a-f]+/[^[:space:]]+' "$RUNNER_TEMP/ftuna.log" | tail -n 1 || true)
+          if [[ -z "$url" ]]; then
+            python3 "$script" update --status failed --result "no scratch URL"
+            exit 1
+          fi
+          echo "scratch $url"
+          python3 "$script" update --status success --result "$url"
 
-          exit "$fail"
+      - name: Mark failed
+        if: failure()
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          [[ -f "$script" ]] || exit 0
+          python3 "$script" update --status failed --result "build failed" --if-open
+
+      - name: Mark cancelled
+        if: cancelled()
+        run: |
+          set -euo pipefail
+          script="$GITHUB_WORKSPACE/_ci/.github/scripts/scratch-comment.py"
+          [[ -f "$script" ]] || exit 0
+          python3 "$script" update --status cancelled --result "cancelled" --if-open

@@ -1,0 +1,14 @@
+name: Go 1.18
+commit: 581603cb7d02019bbf4ff508014038f3120a3dcb
+ai: H
+description: |
+  Go 1.18.10.
+
+path: rpm/golang-18.spec
+overlay: go1_18/overlay
+patches: go1_18/patches
+arches: aarch64
+install:
+  - golang-18
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key

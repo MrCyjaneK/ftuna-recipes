@@ -1,5 +1,6 @@
 name: AirPods
 commit: 824371f636c9f7fb840b288025ae5fb71a7afa82
+path: rpm/sfos_airpods.spec
 ai: V
 description: |
   Manage your airpods on your sfos device.

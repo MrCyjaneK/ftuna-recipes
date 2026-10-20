@@ -1,5 +1,6 @@
 name: Yottagram
 commit: 55caeacfb3c85e2a7a0424f9c5d6e72ab60161c6
+path: rpm/yottagram.spec
 ai: H
 description: |
   If you want calls to be working you need to install voicecall plugin. Remember to reboot phone afterwards! Yottagram should pull it along but it's not required.

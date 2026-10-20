@@ -1,5 +1,6 @@
 name: libdwarf
 commit: 60e572dbf7b4ded66b488f54773f66aaf6184321
+path: rpm/libdwarf.spec
 ai: H
 description: |
   libdwarf is a library of functions to provide read/write DWARF

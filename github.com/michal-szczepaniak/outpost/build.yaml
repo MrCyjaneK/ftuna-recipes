@@ -1,5 +1,6 @@
 name: Outpost
 commit: 551f9bdc0d182d44d5c124e4ae8a58d333b303e4
+path: rpm/outpost.spec
 ai: H
 description: |
   Outpost is unofficial app for InPost.

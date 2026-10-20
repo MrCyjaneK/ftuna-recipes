@@ -87,7 +87,7 @@ ExclusiveArch: %ix86 x86_64
 %endif
 
 %global gcc_version 13.5.0
-%global gcc_release 1
+%global gcc_release 2
 %global _unpackaged_files_terminate_build 0
 %global _performance_build 1
 %global build_ada 0
@@ -178,7 +178,6 @@ BuildRequires: graphviz
 
 BuildRequires: net-tools
 BuildRequires: procps
-Requires: gcc
 Requires: libgo = %{version}-%{release}
 Requires: libgo-devel = %{version}-%{release}
 Provides: gccgo = %{version}-%{release}
@@ -1034,9 +1033,20 @@ rm -rf testlogs-%{_target_platform}-%{version}-%{release}
 %dir %{_prefix}/%{_lib}/gcc
 %dir %{_prefix}/%{_lib}/gcc/%{gcc_target_platform}
 %dir %{_prefix}/%{_lib}/gcc/%{gcc_target_platform}/%{gcc_version}
+%{_prefix}/%{_lib}/gcc/%{gcc_target_platform}/%{gcc_version}/crt*.o
+%{_prefix}/%{_lib}/gcc/%{gcc_target_platform}/%{gcc_version}/libgcc.a
+%{_prefix}/%{_lib}/gcc/%{gcc_target_platform}/%{gcc_version}/libgcc_eh.a
+%{_prefix}/%{_lib}/gcc/%{gcc_target_platform}/%{gcc_version}/libgcc_s.so
+%{_prefix}/%{_lib}/gcc/%{gcc_target_platform}/%{gcc_version}/libgcov.a
 %dir %{_prefix}/libexec/gcc
 %dir %{_prefix}/libexec/gcc/%{gcc_target_platform}
 %dir %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}
+%{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/cc1
+%{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/cc1plus
+%{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/collect2
+%{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/lto1
+%{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/lto-wrapper
+%{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/liblto_plugin.so
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/go1
 %attr(755,root,root) %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/cgo
 %attr(755,root,root) %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/buildid
