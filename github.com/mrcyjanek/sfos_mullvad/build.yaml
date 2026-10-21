@@ -1,6 +1,6 @@
 name: Mullvad VPN
 commit: 1f3606cf17ff91ea73e734104d7f4ddc23579a42
-path: .
+path: rpm/harbour-mullvad.spec
 ai: C
 description: |
   Native client for Mullvad VPN wireguard

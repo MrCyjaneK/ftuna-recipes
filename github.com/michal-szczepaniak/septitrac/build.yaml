@@ -1,6 +1,6 @@
 name: Septitrac
 commit: d6bab40fc5fcc25d5b31a76b3810aef7c93e2519
-path: .
+path: rpm/Septitrac.spec
 ai: H
 description: |
   A Traccar client for SailfishOS. You need mapboxgl-qml from rinigus repo. If you have puremaps installed you already have it. https://openrepos.net/content/rinigus/mapbox-gl-native-bindings-qt-qml.

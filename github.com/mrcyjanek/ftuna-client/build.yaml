@@ -1,6 +1,6 @@
 name: FTuna Client
 commit: fd53a7135fb195628e85211ca1fc4cb4681dadd0
-path: .
+path: rpm/ftuna.yaml
 ai: V
 description: |
   FTuna clients allows you to have one app to manage Chum, OpenRepos, FTuna and custom RPM repositories.

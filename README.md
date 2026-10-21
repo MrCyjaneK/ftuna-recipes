@@ -4,7 +4,7 @@
 name: Advanced Camera
 commit: cdcef3fb69267178f3f224b12f5f6b862a205f6e
 ai: H
-path: .
+path: rpm/harbour-advanced-camera.yaml
 arches: all
 description: |
   Advanced Camera is a community camera application for Sailfish devices.
@@ -21,7 +21,7 @@ install:
 - `name` - How it should appear in the UI
 - `commit` - What commit should we pull for build - this also pulls all submodules
 - `ai` - [AI usage level](#ai-usage) - following Chum guidelines
-- `path` - directory inside the clone that sfosbuild builds. `.` is the repository root. It builds that directory's `rpm/*.yaml`, or `rpm/*.spec` when there is no yaml.
+- `path` - the one spec or yaml sfosbuild builds, such as `rpm/app.spec`. Required. A repository can contain several specs; this names the entrypoint for this package.
 - `overlay` - directory next to the recipe file whose files are copied onto the clone. Defaults to `overlay`. `go1_18/overlay` is that subdirectory.
 - `patches` - directory next to the recipe file whose `*.patch` files are applied first. Defaults to `patches`.
 - `arches` - Which architectures to build: `aarch64`, `armv7hl`, `i486`, or a comma-separated list of those. `all`, empty, or omitted builds all three.

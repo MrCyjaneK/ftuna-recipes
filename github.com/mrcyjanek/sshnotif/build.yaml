@@ -1,6 +1,6 @@
 name: SSH Notif
 commit: 4b19fc4a108043f81c9d5619dbf4e2ed24007aed
-path: .
+path: rpm/sshnotif.yaml
 ai: C
 description: |
   Send notification when SSH session starts/ends

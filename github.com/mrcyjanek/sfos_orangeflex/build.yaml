@@ -1,7 +1,7 @@
 name: Orange Flex Unofficial
 commit: 1023ab50a085e6307f818971276818dd176eecb2
 ai: C
-path: apps/sfos
+path: apps/sfos/rpm/harbour-orangeflex.spec
 description: |
   Unofficial client for Orange Flex.
 
