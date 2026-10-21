@@ -1,6 +1,6 @@
 name: GCC Go 13.5.0
 commit: e9ba5722b410f7649a12bda2ab7381159a781094
-path: rpm/gcc.spec
+path: .
 ai: H
 description: |
   GCC's Go frontend and runtime, built from the Sailfish OS GCC 13.5.0.

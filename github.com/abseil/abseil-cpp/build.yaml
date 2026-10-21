@@ -1,6 +1,6 @@
 name: abseil-cpp
 commit: 278e0a071885a22dcd2fd1b5576cc44757299343
-path: rpm/abseil-cpp.spec
+path: .
 ai: H
 description: |
   Abseil is a collection of C++11 libraries which augment the C++

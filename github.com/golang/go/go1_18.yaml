@@ -4,7 +4,7 @@ ai: H
 description: |
   Go 1.18.10.
 
-path: rpm/golang-18.spec
+path: .
 overlay: go1_18/overlay
 patches: go1_18/patches
 arches: aarch64
