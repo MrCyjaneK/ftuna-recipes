@@ -2,8 +2,7 @@ name: Go 1.18
 commit: 581603cb7d02019bbf4ff508014038f3120a3dcb
 ai: H
 description: |
-  Go 1.18.10.
-
+  Go 1.18.10
 path: .
 overlay: go1_18/overlay
 patches: go1_18/patches
