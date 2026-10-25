@@ -1,0 +1,15 @@
+name: Go 1.21
+commit: 8bba868de983dd7bf55fcd121495ba8d6e2734e7
+ai: H
+description: |
+  Go 1.21.13
+path: .
+overlay: go1_21/overlay
+patches: go1_21/patches
+arches: all
+depends:
+  - github.com/golang/go/go1_19
+install:
+  - golang-21
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key
