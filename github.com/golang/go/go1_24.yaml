@@ -1,0 +1,15 @@
+name: Go 1.24
+commit: 96e4e2b1616c3c59577d48abcf2823bf1fdcd2e2
+ai: H
+description: |
+  Go 1.24.13
+path: .
+overlay: go1_24/overlay
+patches: go1_24/patches
+arches: all
+depends:
+  - github.com/golang/go/go1_22
+install:
+  - golang-24
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key

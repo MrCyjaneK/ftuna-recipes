@@ -6,7 +6,7 @@ description: |
 path: .
 overlay: go1_18/overlay
 patches: go1_18/patches
-arches: aarch64
+arches: all
 install:
   - golang-18
 repos:

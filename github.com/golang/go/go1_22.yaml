@@ -1,0 +1,15 @@
+name: Go 1.22
+commit: 5817e650946aaa0ac28956de96b3f9aa1de4b299
+ai: H
+description: |
+  Go 1.22.12
+path: .
+overlay: go1_22/overlay
+patches: go1_22/patches
+arches: all
+depends:
+  - github.com/golang/go/go1_21
+install:
+  - golang-22
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key
