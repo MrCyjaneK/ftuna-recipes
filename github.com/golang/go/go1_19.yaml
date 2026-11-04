@@ -1,0 +1,15 @@
+name: Go 1.19
+commit: 619b8fd7d2c94af12933f409e962b99aa9263555
+ai: H
+description: |
+  Go 1.19.13
+path: .
+overlay: go1_19/overlay
+patches: go1_19/patches
+arches: all
+depends:
+  - github.com/golang/go/go1_18
+install:
+  - golang-19
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key

@@ -1,0 +1,15 @@
+name: Go 1.26
+commit: 4e8c85f5319d999bfd7617fdc191631e5634e3c5
+ai: H
+description: |
+  Go 1.26.10
+path: .
+overlay: go1_26/overlay
+patches: go1_26/patches
+arches: all
+depends:
+  - github.com/golang/go/go1_24
+install:
+  - golang-26
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key

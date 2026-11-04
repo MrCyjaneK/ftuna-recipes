@@ -1,0 +1,15 @@
+name: Go 1.27.3
+commit: 2aae1000ea1d4b28923b96db28acf4e3b99d6aff
+ai: H
+description: |
+  Go 1.27.3, the default Go toolchain.
+path: .
+overlay: go/overlay
+patches: go/patches
+arches: all
+depends:
+  - github.com/golang/go/go1_26
+install:
+  - golang
+repos:
+  - https://repo-oss.ftuna.eu/{version}/{arch};https://repo-oss.ftuna.eu/ftuna-oss.key

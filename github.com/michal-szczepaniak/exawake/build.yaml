@@ -1,5 +1,6 @@
 name: Exawake
 commit: 19d965f1e5be69bbf6aba93710185ab8e374bdff
+path: .
 ai: H
 description: |
   Exawake is simple Wake-On-Lan application.

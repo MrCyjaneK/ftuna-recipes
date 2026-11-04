@@ -1,5 +1,6 @@
 name: gpspicturetagd
 commit: 78058785205237d913a04357b6883bf42d98d770
+path: .
 ai: C
 description: |
   Tag pictures after they have been written with GPS metadata. App registers a background daemon which runs at configurable thresholds, tries to get GPS lock and write EXIF metadata. Minimal configuration (duration, waiting for lock, notifications) is possible from the GUI.

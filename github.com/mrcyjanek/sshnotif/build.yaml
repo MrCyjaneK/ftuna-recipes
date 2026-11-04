@@ -1,5 +1,6 @@
 name: SSH Notif
 commit: 4b19fc4a108043f81c9d5619dbf4e2ed24007aed
+path: .
 ai: C
 description: |
   Send notification when SSH session starts/ends

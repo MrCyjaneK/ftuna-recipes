@@ -1,5 +1,6 @@
 name: Sailfish Components Gallery
 commit: 2247c604f64f68abb595fcad5f678ddb8c05831d
+path: .
 ai: H
 description: |
   Sailfish Gallery UI components.

@@ -1,0 +1,12 @@
+diff --git a/Yottagram/vendor/tgcalls/tgcalls.pri b/Yottagram/vendor/tgcalls/tgcalls.pri
+--- a/Yottagram/vendor/tgcalls/tgcalls.pri
++++ b/Yottagram/vendor/tgcalls/tgcalls.pri
+@@ -21,7 +21,7 @@ SOURCES += \
+     $$PWD/upstream/tgcalls/LogSinkImpl.cpp \
+     $$PWD/upstream/tgcalls/Manager.cpp \
+     $$PWD/upstream/tgcalls/MediaManager.cpp \
+-    $$PWD/upstream/tgcalls/Message.cpp \
++    $$PWD/tgcalls_message.cpp \
+     $$PWD/upstream/tgcalls/NetworkManager.cpp \
+     $$PWD/upstream/tgcalls/SctpDataChannelProviderInterfaceImpl.cpp \
+     $$PWD/upstream/tgcalls/StaticThreads.cpp \
