@@ -1,0 +1,11 @@
+name: MPRIS AppSupport
+commit: c2b730fe140d9a9b4f84713c3d9c27c0d2b8ba69
+path: .
+ai: V
+description: |
+  Essentially the same as the one you get for free but with queue.
+
+  https://github.com/MrCyjaneK/aliendalvik-mpris2.
+
+install:
+  - mpris-am
