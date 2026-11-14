@@ -1,0 +1,19 @@
+name: Cargadgetd Shell Neon
+commit: 1c366ca66d997017c66932aa4efab7b6065da14e
+path: .
+ai: C
+description: |
+  Fancy UI shell for cargadgetd, recommended for higher end devices. Recommended to install maps, area and sats and to configure overlays in settings prior to first use.
+
+  https://github.com/MrCyjaneK/cargadgetd_shell_neon.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_basic/refs/heads/main/home.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_neon/refs/heads/main/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_neon/refs/heads/main/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_neon/refs/heads/main/screenshots/screenshot3.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_neon/refs/heads/main/screenshots/screenshot4.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_neon/refs/heads/main/screenshots/screenshot5.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_neon/refs/heads/main/screenshots/screenshot6.png
+install:
+  - cargadgetd-shell-neon

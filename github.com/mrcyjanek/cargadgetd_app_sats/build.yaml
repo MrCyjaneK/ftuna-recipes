@@ -1,0 +1,15 @@
+name: Cargadgetd Plugin Satellites
+commit: 85d9282c0076455645de6e742fe241f374a3769c
+path: .
+ai: C
+description: |
+  Shell script runner for cargadgetd
+
+  https://github.com/MrCyjaneK/cargadgetd_app_sats.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_sats/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_sats/refs/heads/master/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_sats/refs/heads/master/screenshots/screenshot2.png
+install:
+  - cargadgetd-plugin-sats

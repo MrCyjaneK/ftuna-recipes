@@ -1,0 +1,57 @@
+name: Cargadgetd
+commit: 4645ea8f2411e2bcc67ac0cee0be10a7e2210519
+path: .
+ai: B
+description: |
+  Let's talk to the car :D
+
+  Wip, early access whatever, can be downloaded from ftuna.eu repositories
+
+  Talks to the car over USB (maybe wireless in future idk), using android auto protocol.
+
+  Cargadgetd is fully modular and customizable. You can create your own shells, apps, plugins.. Everything!
+
+  Apps:
+
+  - [Settings](https://github.com/MrCyjaneK/cargadgetd_app_settings)
+  - [Maps](https://github.com/MrCyjaneK/cargadgetd_app_maps)
+  - [Music](https://github.com/MrCyjaneK/cargadgetd_app_music)
+  - [Link](https://github.com/MrCyjaneK/cargadgetd_app_link)
+  - [Sats](https://github.com/MrCyjaneK/cargadgetd_app_sats)
+  - [Shells](https://github.com/MrCyjaneK/cargadgetd_app_shells)
+  - [Hello World!](https://github.com/MrCyjaneK/cargadgetd_app_hello)
+  - [Fyne Sample](https://github.com/MrCyjaneK/cargadgetd_app_sample)
+
+  Shells:
+  - [Neon](https://github.com/MrCyjaneK/cargadgetd_shell_neon)
+  - [Basic](https://github.com/MrCyjaneK/cargadgetd_shell_basic)
+
+  If you have any questions feel free to open an issue or contact me on Telegram - at the [Sailfish fan club](https://t.me/SFOSFanclub).
+
+  source: https://github.com/MrCyjaneK/cargadgetd
+
+  ----
+
+  Special thanks to @gregguh for the awesome project logo!%                                                                                                                     
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/ui/sfos/cargadgetd/icons/256x256/cargadgetd.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot3.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot4.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot5.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot6.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot7.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot8.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot9.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot10.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot11.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot12.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot13.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot14.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot15.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot16.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd/refs/heads/master/screenshots/screenshot17.png
+install:
+  - cargadgetd

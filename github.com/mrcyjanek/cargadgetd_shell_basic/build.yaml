@@ -1,0 +1,16 @@
+name: Cargadgetd Shell Basic
+commit: f9c0385ab96b21799a9632fd859bf7727b2d5efa
+path: .
+ai: C
+description: |
+  Basic UI shell for cargadgetd, recommended for lower end devices.
+
+  https://github.com/MrCyjaneK/cargadgetd_shell_basic.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_basic/refs/heads/main/home.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_basic/refs/heads/main/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_basic/refs/heads/main/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_shell_basic/refs/heads/main/screenshots/screenshot3.png
+install:
+  - cargadgetd-shell-basic

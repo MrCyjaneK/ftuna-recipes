@@ -1,0 +1,12 @@
+name: Cargadgetd Plugin Sample
+commit: 38799585d5410ec27e74839b84b3361d30499706
+path: .
+ai: C
+description: |
+  Sample app for cargadgetd
+
+  https://github.com/MrCyjaneK/cargadgetd_app_sample.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_sample/refs/heads/master/icon.png
+install:
+  - cargadgetd-plugin-sample

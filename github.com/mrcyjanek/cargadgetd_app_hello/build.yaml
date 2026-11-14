@@ -1,0 +1,15 @@
+name: Cargadgetd Plugin Hello
+commit: 2cd4b559b2e3b59b5f7e8a78650e71f48ea5a218
+path: .
+ai: C
+description: |
+  Simple Hello World app for Cargadgetd.
+
+  https://github.com/MrCyjaneK/cargadgetd_app_hello.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_hello/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_hello/refs/heads/master/screenshots/screenshot1.png
+
+install:
+  - cargadgetd-plugin-hello

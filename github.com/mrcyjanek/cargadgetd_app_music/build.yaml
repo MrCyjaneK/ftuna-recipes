@@ -1,0 +1,16 @@
+name: Cargadgetd Plugin Music
+commit: cd85b73da8f9732c96f40f6970bd16da7fe44df1
+path: .
+ai: C
+description: |
+  Music app for Cargadgetd, supports MPRIS2 (including tracklist!)
+
+  https://github.com/MrCyjaneK/cargadgetd_app_music.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_music/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_music/refs/heads/master/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_music/refs/heads/master/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_music/refs/heads/master/screenshots/screenshot3.png
+install:
+  - cargadgetd-plugin-music

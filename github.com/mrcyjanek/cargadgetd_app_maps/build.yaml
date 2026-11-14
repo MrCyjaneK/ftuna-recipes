@@ -1,0 +1,16 @@
+name: Cargadgetd Plugin Maps
+commit: ee729ca98cbcaaaf2603416bf22dbf74385d562d
+path: .
+ai: C
+description: |
+  Maps app for cargadgetd, recommended to use with Pure Maps.
+
+  https://github.com/MrCyjaneK/cargadgetd_app_maps.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_maps/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_maps/refs/heads/master/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_maps/refs/heads/master/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_maps/refs/heads/master/screenshots/screenshot3.png
+install:
+  - cargadgetd-plugin-maps

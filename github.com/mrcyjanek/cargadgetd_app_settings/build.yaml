@@ -1,0 +1,16 @@
+name: Cargadgetd Plugin Settings
+commit: de0f5d7b3dc27080edea5d84b873f16f208fc040
+path: .
+ai: C
+description: |
+  Settings app for cargadgetd, shows the same settings as the main app.
+
+  https://github.com/MrCyjaneK/cargadgetd_app_settings.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_settings/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_settings/refs/heads/master/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_settings/refs/heads/master/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_settings/refs/heads/master/screenshots/screenshot3.png
+install:
+  - cargadgetd-plugin-settings

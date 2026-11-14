@@ -1,0 +1,14 @@
+name: Cargadgetd Plugin Link
+commit: dcdcff38a3b286f7ccf9ff225a4002704b11f2ba
+path: .
+ai: C
+description: |
+  Screen mirroring app for cargadgetd.
+
+  https://github.com/MrCyjaneK/cargadgetd_app_link.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_link/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_link/refs/heads/master/screenshots/screenshot1.png
+install:
+  - cargadgetd-plugin-link

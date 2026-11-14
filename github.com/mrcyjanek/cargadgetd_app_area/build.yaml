@@ -1,0 +1,12 @@
+name: Cargadgetd Plugin Area
+commit: ecf96a86b56dcbf5c1ba7f6b3f6abd77f45a45d1
+path: .
+ai: C
+description: |
+  Show a popup when you enter a new area.
+
+  https://github.com/MrCyjaneK/cargadgetd_app_area.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_area/refs/heads/master/icon.png
+install:
+  - cargadgetd-plugin-area

@@ -1,0 +1,16 @@
+name: Cargadgetd Plugin Shells
+commit: 6702f4ae62d9f6a1e3ad94bea5e3142588ceca76
+path: .
+ai: C
+description: |
+  Shell script runner for cargadgetd
+
+  https://github.com/MrCyjaneK/cargadgetd_app_shells.
+
+icon: https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_shells/refs/heads/master/icon.png
+screenshots:
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_shells/refs/heads/master/screenshots/screenshot1.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_shells/refs/heads/master/screenshots/screenshot2.png
+  - https://raw.githubusercontent.com/MrCyjaneK/cargadgetd_app_shells/refs/heads/master/screenshots/screenshot3.png
+install:
+  - cargadgetd-plugin-shells
