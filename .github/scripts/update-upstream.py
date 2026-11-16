@@ -8,8 +8,8 @@ with redirects and git config ignored so the request cannot be sent to
 another host. When the pinned hash is a version tag, follow the newest tag
 in that series. Otherwise follow the default branch tip. One open pull
 request per repository is kept. A later upstream commit updates that same
-request. If the request was left open and both repositories moved, it is
-rebased onto the latest base and force-pushed.
+request in place. The request is rebased onto the latest base only when files
+in that recipe directory changed there. Other commits on the base branch are ignored.
 """
 
 from __future__ import annotations
@@ -327,25 +327,33 @@ def github_repository() -> str:
 def file_at_ref(relative: str, sha: str) -> str | None:
     if not relative.startswith(f"{HOST}/"):
         raise RuntimeError(f"refusing to update a recipe outside {HOST}")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", sha):
+        raise RuntimeError("refusing to read a recipe file at a non-commit ref")
+    # A field flag would POST and create a commit. This endpoint is a GET.
     result = subprocess.run(
         [
             "gh",
             "api",
-            f"repos/{github_repository()}/contents/{relative}",
-            "-f",
-            f"ref={sha}",
+            "--method",
+            "GET",
+            f"repos/{github_repository()}/contents/{relative}?ref={sha}",
             "--jq",
             ".content",
         ],
         text=True,
         capture_output=True,
     )
-    if result.returncode != 0 or not result.stdout.strip():
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()
+        if "Not Found" in detail or "HTTP 404" in detail:
+            return None
+        raise RuntimeError(detail or "could not read recipe file")
+    if not result.stdout.strip():
         return None
     try:
         return base64.b64decode(result.stdout).decode()
-    except ValueError:
-        return None
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise RuntimeError(f"could not decode {relative} at {sha}") from exc
 
 
 def declined_files(branch: str, base: str, files: list[FileUpdate]) -> bool:
@@ -403,54 +411,46 @@ def find_open_pr(branch: str, base: str) -> dict | None:
     return listed[0]
 
 
-def recipes_base_moved(base_branch: str, head_sha: str) -> bool:
-    """True when the recipes default branch has commits the open PR lacks."""
-    owner, name = github_repository().split("/", 1)
-    payload = gh_json(
+def recipe_files_changed(base_branch: str, head_sha: str, recipe: str) -> bool:
+    """True when this recipe directory changed on the base branch after the PR.
+
+    The comparison is the base branch against the merge base of the open request,
+    so the request's own commit-hash edit is not treated as a recipe change.
+    """
+    if not recipe.startswith(f"{HOST}/"):
+        raise RuntimeError(f"refusing to compare a recipe outside {HOST}")
+    listed = gh_json(
         [
             "api",
-            "graphql",
-            "-f",
-            "query=query($owner:String!,$name:String!,$base:String!,$head:String!){"
-            "repository(owner:$owner,name:$name){ref(qualifiedName:$base){compare(headRef:$head){behindBy}}}}",
-            "-f",
-            f"owner={owner}",
-            "-f",
-            f"name={name}",
-            "-f",
-            f"base=refs/heads/{base_branch}",
-            "-f",
-            f"head={head_sha}",
+            f"repos/{github_repository()}/compare/{head_sha}...{base_branch}",
+            "--jq",
+            "[((.files // [])[].filename)]",
         ]
     )
-    if not isinstance(payload, dict):
-        raise RuntimeError("unexpected compare response")
-    if payload.get("errors"):
-        message = payload["errors"][0].get("message", "compare failed")
-        raise RuntimeError(str(message))
-    ref = payload.get("data", {}).get("repository", {}).get("ref")
-    compare = None if not isinstance(ref, dict) else ref.get("compare")
-    if not isinstance(compare, dict) or "behindBy" not in compare:
+    if not isinstance(listed, list):
         raise RuntimeError("could not compare the open pull request with the base branch")
-    return int(compare["behindBy"]) > 0
+    # The compare response stops at 300 files. Past that, assume the recipe may be in it.
+    if len(listed) >= 300:
+        return True
+    prefix = recipe.rstrip("/") + "/"
+    return any(isinstance(name, str) and (name == recipe or name.startswith(prefix)) for name in listed)
 
 
-def choose_update(has_pr: bool, pr_pin: str | None, target: str, base_moved: bool) -> str:
+def choose_update(has_pr: bool, pins_match: bool, recipe_changed: bool) -> str:
     """How to keep a single open pull request current.
 
     open: no pull request yet.
-    current: the open pull request already has this upstream commit.
-    fast-forward: upstream moved and this recipes repo did not.
-    rebase: the pull request was ignored while both repositories moved.
+    current: the open pull request already has this upstream commit, and its
+    recipe directory is unchanged on the base branch.
+    fast-forward: upstream moved and the recipe directory did not.
+    rebase: the recipe directory changed on the base branch.
     """
     if not has_pr:
         return "open"
-    if pr_pin is None:
+    if recipe_changed:
         return "rebase"
-    if pr_pin.lower() == target.lower():
+    if pins_match:
         return "current"
-    if base_moved:
-        return "rebase"
     return "fast-forward"
 
 
@@ -504,28 +504,25 @@ def commit_message(owner: str, repo: str, files: list[FileUpdate]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def classify_files(branch: str, base_branch: str, files: list[FileUpdate]) -> tuple[str, dict | None]:
+def classify_files(
+    branch: str, base_branch: str, recipe: str, files: list[FileUpdate]
+) -> tuple[str, dict | None]:
     existing = find_open_pr(branch, base_branch)
     if existing is None:
         return "open", None
     head = str(existing.get("headRefOid") or "")
-    stale = False
+    if not head:
+        raise RuntimeError("open pull request has no head commit")
+    pins_match = True
     for item in files:
-        text = file_at_ref(item.relative, head) if head else None
-        pin = None
-        if text is not None:
-            try:
-                pin = read_commit(text)
-            except RuntimeError:
-                pin = None
-        if pin is None:
-            return choose_update(True, None, item.plan.new, False), existing
+        text = file_at_ref(item.relative, head)
+        if text is None:
+            return "rebase", existing
+        pin = read_commit(text)
         if pin.lower() != item.plan.new.lower():
-            stale = True
-    if not stale:
-        return "current", existing
-    moved = bool(head) and recipes_base_moved(base_branch, head)
-    return choose_update(True, "stale", files[0].plan.new, moved), existing
+            pins_match = False
+    changed = recipe_files_changed(base_branch, head, recipe)
+    return choose_update(True, pins_match, changed), existing
 
 
 def prepare_branch(branch: str, base_sha: str, kind: str) -> None:
@@ -693,7 +690,7 @@ def main() -> int:
             if not files:
                 continue
             branch = branch_for(recipe, root)
-            kind, existing = classify_files(branch, base_branch, files)
+            kind, existing = classify_files(branch, base_branch, label, files)
             names = ", ".join(Path(item.relative).name for item in files)
             if kind == "current" and existing:
                 print(f"  pull request {existing['url']} already has {names}")
