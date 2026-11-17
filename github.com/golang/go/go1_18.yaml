@@ -7,6 +7,8 @@ path: .
 overlay: go1_18/overlay
 patches: go1_18/patches
 arches: all
+depends:
+  - github.com/sailfishos/gcc
 install:
   - golang-18
 repos:
